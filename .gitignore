@@ -1,0 +1,9 @@
+./node_modules/ 
+./pgadmin
+
+.vscode
+.logs/
+.test_resources/
+
+/.claude
+CLAUDE.md
