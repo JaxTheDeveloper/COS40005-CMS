@@ -1,0 +1,19 @@
+.
+├── CLAUDE.md
+├── config
+│   ├── __init__.py
+│   ├── prod.py
+│   └── settings
+├── doc
+│   └── test.txt
+├── docker-compose-dev.yaml
+├── logs
+├── pgadmin
+│   └── var
+├── README.md
+├── src
+│   ├── backend
+│   └── frontend
+└── tests
+
+11 directories, 6 files

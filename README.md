@@ -1,19 +1,25 @@
-# ECPS 
+# COS40005
 
 ## Project Structure
 
 ```
-ECPS/
-├── ecps_backend/          # Django REST API backend
-│   ├── manage.py
-│   ├── requirements.txt
-│   └── ecps_backend/
-├── ecps-frontend/         # React TypeScript frontend
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── src/
-├── docker-compose-dev.yaml # Development Docker services
-└── README.md
+.
+├── CLAUDE.md
+├── config
+│   ├── __init__.py
+│   ├── prod.py
+│   └── settings
+├── doc
+│   └── test.txt
+├── docker-compose-dev.yaml
+├── logs
+├── pgadmin
+│   └── var
+├── README.md
+├── src
+│   ├── backend
+│   └── frontend
+└── tests
 ```
 
 ## Prerequisites
