@@ -1,48 +1,40 @@
-import { useState } from "react";
-import { askSuggestions } from "../data";
+import React, { useState } from "react";
+
+const SUGGESTIONS = [
+  "How do I write a strong introduction for my essay?",
+  "What’s a good way to manage my time for homework?",
+  "What are the major differences between democracy and monarchy?",
+  "Why are we still here?",
+  "What’s the best way to handle group projects?",
+  "How to not piss off my team leader",
+  "Why are these questions the suggestion for students to ask AI?",
+];
 
 export default function AskAI() {
-  const [q, setQ] = useState("");
-  const [answers, setAnswers] = useState([]);
-
-  const ask = () => {
-    if (!q.trim()) return;
-    // Fake answer (replace with API call if desired)
-    setAnswers(a => [{ q, a: "Thanks! (This is a placeholder response.)" }, ...a]);
-    setQ("");
-  };
-
+  const [query, setQuery] = useState("");
   return (
-    <main className="page page--wide">
-      <div className="askai">
-        <div className="askai__bar">
+    <section className="askai-wrapper">
+      <h2 className="askai-title">Ask AI</h2>
+      <div className="askai-box">
+        <div className="askai-input-row">
           <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && ask()}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Enter text here"
+            className="askai-input"
           />
-          <button className="askai__go" onClick={ask}>▶</button>
+          <button className="askai-send" aria-label="Send">➤</button>
         </div>
 
-        <div className="askai__suggestions">
-          <div className="muted">Suggestion</div>
-          <ul>
-            {askSuggestions.map((s, i) => <li key={i} onClick={()=>setQ(s)}>{s}</li>)}
-          </ul>
-        </div>
-
-        {answers.length > 0 && (
-          <div className="askai__answers">
-            {answers.map((x, i) => (
-              <div className="qa" key={i}>
-                <div className="qa__q"><strong>Q:</strong> {x.q}</div>
-                <div className="qa__a"><strong>A:</strong> {x.a}</div>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="askai-suggest-title">Suggestion</div>
+        <ul className="askai-suggest-list">
+          {SUGGESTIONS.map((s, idx) => (
+            <li key={idx} className="askai-suggest-item">
+              {s}
+            </li>
+          ))}
+        </ul>
       </div>
-    </main>
+    </section>
   );
 }

@@ -1,16 +1,12 @@
-export default function Queries() {
-  const onSubmit = (e) => {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const payload = Object.fromEntries(form.entries());
-    alert("Submitted!\n\n" + JSON.stringify(payload, null, 2));
-  };
+import React from "react";
 
+export default function Queries() {
   return (
-    <main className="page page--narrow">
-      <div className="panel">
-        <h3 className="panel__title">Queries</h3>
-        <ul className="rules">
+    <section className="stack">
+      <h2 className="section-title">Queries</h2>
+
+      <div className="rules">
+        <ul>
           <li>Be Clear — Ask one question at a time and make it easy to understand.</li>
           <li>Be Polite — Use respectful language and tone.</li>
           <li>Stay on Topic — Keep your question related to the subject or discussion.</li>
@@ -19,35 +15,38 @@ export default function Queries() {
         </ul>
       </div>
 
-      <form className="form" onSubmit={onSubmit}>
-        <div className="grid grid--2">
-          <label className="field">
-            <span>Name</span>
-            <input name="name" placeholder="Jan" required />
-          </label>
-
-          <label className="field">
-            <span>Email</span>
-            <input name="email" type="email" placeholder="you@email.com" required />
-          </label>
-
-          <label className="field">
-            <span>Phone</span>
-            <input name="phone" placeholder="+84" />
-          </label>
-
-          <span />{/* spacer */}
+      <form className="query-form" onSubmit={(e) => e.preventDefault()}>
+        <div className="grid-2">
+          <div className="form-field">
+            <label>Name</label>
+            <input placeholder="Jon" />
+          </div>
+          <div className="form-field">
+            <label>Email</label>
+            <input type="email" placeholder="jon@swinburne.com" />
+          </div>
         </div>
 
-        <label className="field">
-          <span>Description</span>
-          <textarea name="description" rows={8} placeholder="Text" required />
-        </label>
+        <div className="grid-2">
+          <div className="form-field">
+            <label>Phone</label>
+            <input placeholder="+84" />
+          </div>
+          <div className="form-field">
+            <label>Title</label>
+            <input placeholder="…" />
+          </div>
+        </div>
+
+        <div className="form-field">
+          <label>Description</label>
+          <textarea rows={8} placeholder="Text" />
+        </div>
 
         <div className="center">
           <button className="btn" type="submit">Send</button>
         </div>
       </form>
-    </main>
+    </section>
   );
 }

@@ -1,51 +1,48 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 
 export default function Login() {
-  const [showPwd, setShowPwd] = useState(false);
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const onSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    // simple demo: pretend login succeeded
-    navigate("/dashboard");
+    alert(`Logged in as ${email}`);
+    // you could navigate or call API here
   };
 
   return (
-    <main className="page page--center">
-      <form className="login" onSubmit={onSubmit}>
-        <h2 className="login__title">Welcome back</h2>
-        <p className="muted">Sign in to continue to Swinburne VN</p>
+    <section className="stack center" style={{ maxWidth: 400, margin: "60px auto" }}>
+      <h2 className="section-title">Login</h2>
 
-        <label className="field">
-          <span>Email</span>
-          <input name="email" type="email" placeholder="you@email.com" required />
-        </label>
-
-        <label className="field">
-          <span>Password</span>
-          <div className="password">
-            <input name="password" type={showPwd ? "text":"password"} placeholder="••••••••" required />
-            <button type="button" className="password__toggle" onClick={()=>setShowPwd(s=>!s)}>
-              {showPwd ? "Hide" : "Show"}
-            </button>
-          </div>
-        </label>
-
-        <div className="login__row">
-          <label className="checkbox">
-            <input type="checkbox" /> Remember me
-          </label>
-          <a href="#!" onClick={(e)=>e.preventDefault()} className="muted">Forgot password?</a>
+      <form className="query-form" onSubmit={handleSubmit}>
+        <div className="form-field">
+          <label>Email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+          />
         </div>
 
-        <button className="btn btn--full" type="submit">Log in</button>
+        <div className="form-field">
+          <label>Password</label>
+          <input
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+        </div>
 
-        <div className="login__meta">
-          <span className="muted">Don’t have an account?</span>{" "}
-          <a href="#!" onClick={(e)=>e.preventDefault()}>Create one</a>
+        <div className="center">
+          <button className="btn btn-primary" type="submit">
+            Log In
+          </button>
         </div>
       </form>
-    </main>
+    </section>
   );
 }
