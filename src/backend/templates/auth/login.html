@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Swinburne CMS Login</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="{% static 'auth/css/login.css' %}" />
+    </head>
+    <body>
+        <div class="login-container">
+            <div class="login-box">
+                <div class="login-header">
+                    {% if is_admin %}
+                    <h1>Admin Portal</h1>
+                    {% else %}
+                    <img
+                        src="{% static 'auth/images/swinburne-logo.png' %}"
+                        alt="Swinburne Logo"
+                        class="logo"
+                    />
+                    {% endif %}
+                </div>
+
+                <div class="login-content">
+                    {% if messages %} {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                    {% endfor %} {% endif %}
+
+                    <form
+                        method="post"
+                        action="{% if is_admin %}{% url 'admin_login' %}{% else %}{% url 'login' %}{% endif %}"
+                        class="login-form"
+                    >
+                        {% csrf_token %}
+                        <div class="form-header">
+                            {% if is_admin %}
+                            <h2>Sign in to Admin Portal</h2>
+                            {% else %}
+                            <h2>Sign in</h2>
+                            <p>Use your Swinburne account</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <input
+                                type="email"
+                                name="email"
+                                id="email"
+                                required
+                                placeholder="Email"
+                                class="form-control"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <input
+                                type="password"
+                                name="password"
+                                id="password"
+                                required
+                                placeholder="Password"
+                                class="form-control"
+                            />
+                        </div>
+
+                        <div class="form-group form-check">
+                            <input
+                                type="checkbox"
+                                name="remember"
+                                id="remember"
+                                class="form-check-input"
+                            />
+                            <label for="remember" class="form-check-label"
+                                >Keep me signed in</label
+                            >
+                        </div>
+
+                        <div class="form-footer">
+                            <button type="submit" class="btn btn-primary">
+                                Sign in
+                            </button>
+                        </div>
+                    </form>
+
+                    {% if not is_admin %}
+                    <div class="login-options">
+                        <p>
+                            <a href="{% url 'password_reset' %}"
+                                >Forgot password?</a
+                            >
+                        </p>
+                        <p><a href="{% url 'admin:login' %}">Admin Login</a></p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <footer class="login-footer">
+                <p>
+                    &copy; {% now "Y" %} Swinburne University of Technology. All
+                    rights reserved.
+                </p>
+            </footer>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,13 @@
+{% extends 'base.html' %} {% block title %}My Enrollments{% endblock %} {% block
+content %}
+<h1>My Enrollments</h1>
+<ul>
+    {% for e in enrollments %}
+    <li>
+        {{ e.offering.unit.code }} - {{ e.offering.unit.name }} — {{ e.status }}
+    </li>
+    {% empty %}
+    <li>No enrollments found.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

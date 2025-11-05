@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{% block title %}Swinburne CMS{% endblock %}</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="{% static 'css/base.css' %}" />
+        {% block extra_css %}{% endblock %}
+    </head>
+    <body>
+        {% if user.is_authenticated and not is_admin_site %}
+        <nav class="main-nav">
+            <div class="nav-brand">
+                <a href="{% url 'dashboard' %}">
+                    <img
+                        src="{% static 'images/swinburne-logo.png' %}"
+                        alt="Swinburne Logo"
+                    />
+                </a>
+            </div>
+            <div class="nav-links">
+                {% if user.user_type == 'student' %}
+                <a href="#">My Enrollments</a>
+                <a href="#">Available Units</a>
+                <a href="#">Achievements</a>
+                {% elif user.user_type == 'unit_convenor' %}
+                <a href="#">My Units</a>
+                <a href="#">Approvals</a>
+                <a href="#">Resources</a>
+                {% endif %}
+            </div>
+            <div class="nav-user">
+                <span class="user-name"
+                    >{{ user.get_full_name|default:user.email }}</span
+                >
+                <div class="user-dropdown">
+                    <a href="{% url 'profile_edit' %}">Edit Profile</a>
+                    <a href="{% url 'logout' %}">Logout</a>
+                </div>
+            </div>
+        </nav>
+        {% endif %}
+
+        <main class="main-content">
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %} {% block content %}{% endblock %}
+        </main>
+
+        {% if user.is_authenticated and not is_admin_site %}
+        <footer class="main-footer">
+            <p>
+                &copy; {% now "Y" %} Swinburne University of Technology. All
+                rights reserved.
+            </p>
+        </footer>
+        {% endif %}
+
+        <script src="{% static 'js/base.js' %}"></script>
+        {% block extra_js %}{% endblock %}
+    </body>
+</html>

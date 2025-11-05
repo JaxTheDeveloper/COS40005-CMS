@@ -1,0 +1,46 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<div class="dashboard-container">
+    <h1>Welcome to Swinburne CMS</h1>
+    <div class="user-info">
+        <h2>{{ user.get_full_name|default:user.email }}</h2>
+        <p class="user-type">{{ user.get_user_type_display }}</p>
+    </div>
+
+    <div class="quick-actions">
+        <h3>Quick Actions</h3>
+        <div class="action-grid">
+            {% if user.user_type == 'student' %}
+            <a href="#" class="action-card">
+                <i class="fas fa-book"></i>
+                <span>My Enrollments</span>
+            </a>
+            <a href="#" class="action-card">
+                <i class="fas fa-list"></i>
+                <span>Available Units</span>
+            </a>
+            <a href="#" class="action-card">
+                <i class="fas fa-trophy"></i>
+                <span>My Achievements</span>
+            </a>
+            {% elif user.user_type == 'unit_convenor' %}
+            <a href="#" class="action-card">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>My Units</span>
+            </a>
+            <a href="#" class="action-card">
+                <i class="fas fa-tasks"></i>
+                <span>Pending Approvals</span>
+            </a>
+            <a href="#" class="action-card">
+                <i class="fas fa-file-alt"></i>
+                <span>Manage Resources</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'profile_edit' %}" class="action-card">
+                <i class="fas fa-user-edit"></i>
+                <span>Edit Profile</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

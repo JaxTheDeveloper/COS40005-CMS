@@ -1,0 +1,11 @@
+{% extends 'base.html' %} {% block title %}My Units{% endblock %} {% block
+content %}
+<h1>My Convened Units</h1>
+<ul>
+    {% for u in units %}
+    <li>{{ u.code }} - {{ u.name }}</li>
+    {% empty %}
+    <li>You are not convenor for any units.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

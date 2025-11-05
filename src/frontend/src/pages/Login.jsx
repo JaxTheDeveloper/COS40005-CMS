@@ -1,48 +1,102 @@
-import React, { useState } from "react";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { Box, Container, TextField, Button, Typography, Paper } from '@mui/material';
+import { authService } from '../services/auth';
+
+const validationSchema = Yup.object({
+  email: Yup.string()
+    .email('Enter a valid email')
+    .required('Email is required'),
+  password: Yup.string()
+    .min(8, 'Password should be of minimum 8 characters length')
+    .required('Password is required'),
+});
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert(`Logged in as ${email}`);
-    // you could navigate or call API here
-  };
+  const formik = useFormik({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    validationSchema: validationSchema,
+    onSubmit: async (values, { setSubmitting, setErrors }) => {
+      try {
+        await authService.login(values.email, values.password);
+        navigate('/dashboard/compsci');
+      } catch (error) {
+        setErrors({
+          submit: error.response?.data?.detail || 'Login failed. Please try again.'
+        });
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
 
   return (
-    <section className="stack center" style={{ maxWidth: 400, margin: "60px auto" }}>
-      <h2 className="section-title">Login</h2>
-
-      <form className="query-form" onSubmit={handleSubmit}>
-        <div className="form-field">
-          <label>Email</label>
-          <input
-            type="email"
+    <Container component="main" maxWidth="xs">
+      <Paper 
+        elevation={3} 
+        sx={{ 
+          mt: 8, 
+          p: 4, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center' 
+        }}
+      >
+        <Typography component="h1" variant="h5">
+          Sign in
+        </Typography>
+        <Box component="form" onSubmit={formik.handleSubmit} noValidate sx={{ mt: 1 }}>
+          <TextField
+            margin="normal"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={formik.values.email}
+            onChange={formik.handleChange}
+            error={formik.touched.email && Boolean(formik.errors.email)}
+            helperText={formik.touched.email && formik.errors.email}
           />
-        </div>
-
-        <div className="form-field">
-          <label>Password</label>
-          <input
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
             type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            id="password"
+            autoComplete="current-password"
+            value={formik.values.password}
+            onChange={formik.handleChange}
+            error={formik.touched.password && Boolean(formik.errors.password)}
+            helperText={formik.touched.password && formik.errors.password}
           />
-        </div>
-
-        <div className="center">
-          <button className="btn btn-primary" type="submit">
-            Log In
-          </button>
-        </div>
-      </form>
-    </section>
+          {formik.errors.submit && (
+            <Typography color="error" variant="body2" sx={{ mt: 2 }}>
+              {formik.errors.submit}
+            </Typography>
+          )}
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+            disabled={formik.isSubmitting}
+          >
+            Sign In
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 }

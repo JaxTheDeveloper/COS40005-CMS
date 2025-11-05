@@ -1,240 +1,179 @@
-# COS40005
+# COS40005-CMS
 
-## Project Structure
+Up-to-date developer instructions for running the backend (Django) and frontend (React) locally.
 
-```
-.
-├── CLAUDE.md
-├── config
-│   ├── __init__.py
-│   ├── prod.py
-│   └── settings
-├── doc
-│   └── test.txt
-├── docker-compose-dev.yaml
-├── logs
-├── pgadmin
-│   └── var
-├── README.md
-├── src
-│   ├── backend
-│   └── frontend
-└── tests
-```
+## Quick overview
+
+### Available User Accounts
+
+The system comes with pre-configured test accounts for different user roles:
+
+1. **Student Account**
+   - Email: `student@swin.edu.au`
+   - Password: `Test@123`
+   - Access: Course enrollment, unit resources, queries
+
+2. **Unit Convenor Account**
+   - Email: `convenor@swin.edu.au`
+   - Password: `Test@123`
+   - Access: Unit management, reports, resource management
+
+3. **Staff/Admin Account**
+   - Email: `staff@swin.edu.au`
+   - Password: `Test@123`
+   - Access: Full administrative access
+
+### Server URLs
+
+- Backend (Django): http://localhost:8000
+- Frontend (React dev server): http://localhost:3000
+- PostgreSQL (Docker): localhost:5432
+- Redis (Docker): localhost:6379
+- PgAdmin (Docker): http://localhost:5050
+
+> This repository includes a `docker-compose-dev.yaml` that runs PostgreSQL, Redis, and the Django backend in development mode. The React frontend is run separately (npm) so you get hot-reload.
 
 ## Prerequisites
 
-Before running this project, make sure you have the following installed:
+- Python 3.8+
+- Node.js 16+ and npm
+- Docker & Docker Compose
 
-- **Python 3.8+** (for Django backend)
-- **Node.js 16+** and **npm** (for React frontend)
-- **Docker and Docker Compose** (for database and services)
-- **Git** (for version control)
+## Start services (non-blocking / development)
 
-## Getting Started
+1) Start Docker-backed services (Postgres, Redis, and the Django container) in detached mode:
 
-### 1. Clone the Repository
-
-```bash
-git clone <repository-url>
-cd .....
-```
-
-### 2. Environment Setup
-
-Create a `.env` file in the project root with the following variables:
-
-```env
-# Database Configuration
-DB_NAME=construction
-DB_USER=postgres
-DB_PASSWORD=password
-DB_HOST=localhost
-DB_PORT=5432
-
-# PostgreSQL Docker Configuration
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password
-POSTGRES_DB=construction
-
-# PgAdmin Configuration
-PGADMIN_DEFAULT_EMAIL=admin@admin.com
-PGADMIN_DEFAULT_PASSWORD=admin
-```
-
-### 3. Start Database Services
-
-Start PostgreSQL, Redis, and PgAdmin using Docker Compose:
-
-```bash
-docker-compose -f docker-compose-dev.yaml up -d
-```
-
-This will start:
-- **PostgreSQL** on port `5432`
-- **Redis** on port `6379`
-- **PgAdmin** on port `5050` (accessible at http://localhost:5050)
-
-### 4. Backend Setup (Django)
-
-Navigate to the backend directory:
-
-```bash
-cd ecps_backend
-```
-
-#### Create and activate a virtual environment:
-
-**On Windows (PowerShell):**
 ```powershell
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+docker-compose -f docker-compose-dev.yaml up --build -d
 ```
 
-**On macOS/Linux:**
-```bash
-python -m venv venv
-source venv/bin/activate
-```
+This will start containers and map ports from the compose file (Django on 8000, Postgres 5432, Redis 6379, pgAdmin 5050).
 
-#### Install Python dependencies:
+2) Start the frontend in a separate terminal (PowerShell). From project root:
 
-```bash
-pip install -r requirements.txt
-```
-
-#### Run database migrations:
-
-```bash
-python manage.py makemigrations
-python manage.py migrate
-```
-
-#### Create a superuser (optional):
-
-```bash
-python manage.py createsuperuser
-```
-
-#### Start the Django development server:
-
-```bash
-python manage.py runserver
-```
-
-The backend API will be available at: http://localhost:8000
-
-### 5. Frontend Setup (React)
-
-Open a new terminal and navigate to the frontend directory:
-
-```bash
-cd ecps-frontend
-```
-
-#### Install Node.js dependencies:
-
-```bash
+```powershell
+cd src\frontend
 npm install
+npm start
 ```
 
-#### Start the development server:
+Notes:
+- `npm start` (react-scripts) runs the dev server on port 3000 by default. If port 3000 is taken, it will prompt to use another port.
+- Run the frontend in a separate terminal so both front and back run concurrently (non-blocking).
 
-```bash
-npm run dev
+## Running backend tests (inside the backend container)
+
+You can run Django tests using docker exec against the running backend container. Example (runs tests defined in the users app):
+
+```powershell
+docker exec -it cos40005_backend python manage.py test src.backend.users.tests.test_auth_and_profile -v 2
 ```
 
-The frontend will be available at: http://localhost:5173
+## Creating Test Users
 
-## Available Services
+To create test users (student, unit convenor, and staff accounts):
 
-Once everything is running, you can access:
+```powershell
+docker exec -it cos40005_backend python manage.py create_test_users
+```
 
-- **Frontend Application**: http://localhost:5173
-- **Backend API**: http://localhost:8000
-- **Django Admin**: http://localhost:8000/admin
-- **PgAdmin**: http://localhost:5050
-- **API Documentation**: http://localhost:8000/api/ (if configured)
+This will create the test accounts listed at the top of this README.
 
-## Development Workflow
+## Authentication
 
-### Backend Development
-
-1. **Activate virtual environment**: `.\venv\Scripts\Activate.ps1` (Windows) or `source venv/bin/activate` (macOS/Linux)
-2. **Make model changes**: Edit models in Django apps
-3. **Create migrations**: `python manage.py makemigrations`
-4. **Apply migrations**: `python manage.py migrate`
-5. **Run tests**: `python manage.py test`
-
-### Frontend Development
-
-1. **Start development server**: `npm run dev`
-2. **Run linting**: `npm run lint`
-3. **Build for production**: `npm run build`
-4. **Preview production build**: `npm run preview`
-
-## Technology Stack
-
-### Backend
-- **Django 5.1.4** - Web framework
-- **Django REST Framework 3.14.0** - API framework
-- **PostgreSQL** - Primary database
-- **Redis** - Caching and session storage
-- **JWT** - Authentication
-- **CORS** - Cross-origin resource sharing
-
-### Frontend
-- **React 19.1.0** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **ESLint** - Code linting
-
-### Infrastructure
-- **Docker** - Containerization
-- **PostgreSQL** - Database
-- **Redis** - Caching
-- **PgAdmin** - Database administration
-
-## Environment Variables
-
-The application uses the following environment variables:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DB_NAME` | Database name | `construction` |
-| `DB_USER` | Database username | `postgres` |
-| `DB_PASSWORD` | Database password | `password` |
-| `DB_HOST` | Database host | `localhost` |
-| `DB_PORT` | Database port | `5432` |
+For detailed information about authentication and user access:
+- See [Authentication Documentation](doc/authentication.md)
+- Default test accounts are provided for quick testing
+- JWT tokens are used for API authentication
+- Frontend automatically handles token management
 
 ## Troubleshooting
 
-### Common Issues
+### Authentication Issues
 
-1. **Port already in use**: Make sure no other services are running on ports 5432, 5173, 8000, or 5050
-2. **Database connection error**: Ensure Docker services are running with `docker-compose ps`
-3. **Python virtual environment**: Always activate the virtual environment before running Django commands
-4. **Node modules**: Delete `node_modules` and run `npm install` if you encounter dependency issues
+1. **Login Not Working**
+   - Ensure both backend and frontend are running
+   - Check that you're using the correct email/password
+   - Clear browser localStorage and try again
 
-### Useful Commands
+2. **API Access Denied**
+   - Token might be expired - try logging out and back in
+   - Check that you have the correct permissions for the endpoint
 
-**Check Docker services:**
-```bash
-docker-compose -f docker-compose-dev.yaml ps
+3. **404 Not Found Errors**
+   - Verify that all services are running
+   - Check the API endpoint URLs in the error message
+   - Ensure you're logged in with appropriate permissions
+
+Or run the full test suite:
+
+```powershell
+docker exec -it cos40005_backend python manage.py test -v 2
 ```
 
-**View Docker logs:**
-```bash
-docker-compose -f docker-compose-dev.yaml logs postgres
-```
+## Stopping services
 
-**Stop all Docker services:**
-```bash
+- Stop and remove containers (Docker Compose):
+
+```powershell
 docker-compose -f docker-compose-dev.yaml down
 ```
 
-**Reset database:**
-```bash
+- Stop and remove containers + volumes (reset DB):
+
+```powershell
 docker-compose -f docker-compose-dev.yaml down -v
-docker-compose -f docker-compose-dev.yaml up -d
+```
+
+- To stop the frontend dev server, press Ctrl+C in the terminal where `npm start` is running.
+
+## Backend (local, without Docker)
+
+If you prefer to run Django locally (not via the container):
+
+```powershell
+cd src\backend
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+The API will be available at `http://localhost:8000`.
+
+## Frontend production build
+
+To create a production build of the frontend and serve it from any static server:
+
+```powershell
+cd src\frontend
+npm run build
+# then serve the build directory with your preferred static server
+```
+
+If you would like to serve the React build from Django in production, we can add a small integration step (collect static, configure WhiteNoise or a web server). Ask me and I can add it.
+
+## API endpoints (examples)
+
+- List enrollments (current user): `GET http://localhost:8000/api/enrollment/enrollments/`
+- Create enrollment: `POST http://localhost:8000/api/enrollment/enrollments/` (body: { "offering": <id> })
+- Social gold balance: `GET http://localhost:8000/api/social/social-gold/`
+
+## Troubleshooting
+
+- If a port is in use, stop the conflicting service or change the port.
+- If Docker containers fail to start, check the logs:
+
+```powershell
+docker-compose -f docker-compose-dev.yaml logs backend
+docker-compose -f docker-compose-dev.yaml logs postgres
+```
+
+- If frontend dependencies cause issues, remove `node_modules` and reinstall:
+
+```powershell
+cd src\frontend
+rm -r node_modules
+npm install
 ```

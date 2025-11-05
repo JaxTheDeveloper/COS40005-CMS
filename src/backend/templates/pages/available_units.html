@@ -1,0 +1,14 @@
+{% extends 'base.html' %} {% block title %}Available Units{% endblock %} {%
+block content %}
+<h1>Available Units</h1>
+<ul>
+    {% for o in offerings %}
+    <li>
+        {{ o.unit.code }} - {{ o.unit.name }} ({{ o.get_semester_display }} {{
+        o.year }})
+    </li>
+    {% empty %}
+    <li>No offerings found.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends 'base.html' %} {% block title %}Manage Resources - {{ unit.code }}{%
+endblock %} {% block content %}
+<h1>Resources for {{ unit.code }} - {{ unit.name }}</h1>
+<ul>
+    {% for r in resources %}
+    <li>{{ r.title }} - {{ r.get_resource_type_display }}</li>
+    {% empty %}
+    <li>No resources yet.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

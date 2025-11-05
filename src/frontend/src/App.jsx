@@ -4,7 +4,9 @@ import Navbar from "./components/Navbar.jsx";
 import AskAI from "./pages/AskAI.jsx";
 import Queries from "./pages/Queries.jsx";
 import CSDashboard from "./pages/CS_Dashboard.jsx";
-import Login from "./pages/Login.jsx";          // ← new import
+import Login from "./pages/Login.jsx";
+import MyEnrollments from "./components/MyEnrollments.jsx";
+import SocialGold from "./components/SocialGold.jsx";
 
 export default function App() {
   return (
@@ -23,7 +25,9 @@ export default function App() {
           <Route path="/dashboard/compsci" element={<CSDashboard />} />
           <Route path="/queries" element={<Queries />} />
           <Route path="/ask-ai" element={<AskAI />} />
-          <Route path="/login" element={<Login />} />     {/* ← new route */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/enrollments" element={<MyEnrollments />} />
+          <Route path="/social-gold" element={<SocialGold />} />
         </Routes>
       </main>
 

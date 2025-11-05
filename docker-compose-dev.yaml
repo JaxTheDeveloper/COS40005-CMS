@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: ecps
+      POSTGRES_DB: SwinCMS
       PGDATA: /data/postgres
     volumes:
       - postgres:/data/postgres
@@ -15,6 +15,28 @@ services:
     networks:
       - postgres
     restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: cos40005_backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
+      - POSTGRES_DB=SwinCMS
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_HOST=cos40005_postgres
+      - POSTGRES_PORT=5432
+    networks:
+      - postgres
+    depends_on:
+      - postgres
 
   redis:
     container_name: cos40005_redis
@@ -31,12 +53,14 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
       PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: "False" 
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_DATA_DIR: "'/var/lib/pgadmin'"
+      PGADMIN_CONFIG_LOG_FILE: "'/var/lib/pgadmin/pgadmin4.log'"
+    user: root
     volumes:
-      - ./pgadmin/var:/var/lib/pgadmin
-      - ./pgadmin:/pgadmin
+      - pgadmin_data:/var/lib/pgadmin
     ports:
-      - "5050:80" 
+      - "5050:80"
     networks:
       - postgres
     restart: unless-stopped
@@ -49,4 +73,4 @@ networks:
 
 volumes:
   postgres:
-  pgadmin:
+  pgadmin_data:
