@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'src.backend.academic',
     'src.backend.social',
     'src.backend.enrollment',
+    'src.backend.core',
 ]
 
 MIDDLEWARE = [
