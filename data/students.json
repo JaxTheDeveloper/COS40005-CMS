@@ -1,0 +1,290 @@
+[
+    {
+        "full_name": "Hoang Nhat Thanh",
+        "username": "thanhnhathoang",
+        "email": "thanhnhathoang@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Doan Quang Lam",
+        "username": "lamquangdoan",
+        "email": "lamquangdoan@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Xuan Bach",
+        "username": "bachxuanguyen",
+        "email": "bachxuanguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Tran Khiem Cung",
+        "username": "cungkhiemtran",
+        "email": "cungkhiemtran@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Hung Thinh",
+        "username": "thinhhungnguyen",
+        "email": "thinhhungnguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Ngo Nguyen Phuc",
+        "username": "phucnguyenngo",
+        "email": "phucnguyenngo@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Le Ha Kim Ngan",
+        "username": "nganhakimle",
+        "email": "nganhakimle@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Quy Hung",
+        "username": "hungquynguyen",
+        "email": "hungquynguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Thanh Trung",
+        "username": "trungthanh",
+        "email": "trungthanh@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Thanh Minh",
+        "username": "minhthanh",
+        "email": "minhthanh@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Huu Thang",
+        "username": "thanghuunguyen",
+        "email": "thanghuunguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Computer Science",
+        "enrollments": []
+    },
+    {
+        "full_name": "Mai Minh Khoa",
+        "username": "khoaminhmai",
+        "email": "khoaminhmai@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Tran Tam Nhi",
+        "username": "nhitamtran",
+        "email": "nhitamtran@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Pham Khanh Tra",
+        "username": "trakhanhpham",
+        "email": "trakhanhpham@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Ngoc Thuy Duong",
+        "username": "duongngocthuynguyen",
+        "email": "duongngocthuynguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Huu Nam Phong",
+        "username": "phonghuunamnguyen",
+        "email": "phonghuunamnguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Ho Tuan Kiet",
+        "username": "kiettuanho",
+        "email": "kiettuanho@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Huynh Duc Thang",
+        "username": "thangduchuynh",
+        "email": "thangduchuynh@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Le Chau Giang",
+        "username": "giangchaule",
+        "email": "giangchaule@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Ho Ngoc Anh",
+        "username": "anhngocho",
+        "email": "anhngocho@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Phan Nu Quynh Huong",
+        "username": "huongnuquynhphan",
+        "email": "huongnuquynhphan@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Vu Nguyen Anh Khoi",
+        "username": "khoinguyenanhvu",
+        "email": "khoinguyenanhvu@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Ngo Y Phung",
+        "username": "phungyngo",
+        "email": "phungyngo@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Phi Nguyen Thuy Duong",
+        "username": "duongthuyphi",
+        "email": "duongthuyphi@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Phan Thi Quy Nhat",
+        "username": "nhatthiquyphan",
+        "email": "nhatthiquyphan@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Minh An",
+        "username": "anminhnguyen",
+        "email": "anminhnguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Mai Khanh",
+        "username": "khanhmainguyen",
+        "email": "khanhmainguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Business",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Huynh Thuc Nghi",
+        "username": "nghihuynhthucnguyen",
+        "email": "nghihuynhthucnguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Media & Communications",
+        "enrollments": []
+    },
+    {
+        "full_name": "Nguyen Phuong Huyen",
+        "username": "huyenphuongnguyen",
+        "email": "huyenphuongnguyen@swin.edu.au",
+        "password": "password123",
+        "major": "Media & Communications",
+        "enrollments": []
+    },
+    {
+        "full_name": "Tran Gia Vi",
+        "username": "vigiatran",
+        "email": "vigiatran@swin.edu.au",
+        "password": "password123",
+        "major": "Media & Communications",
+        "enrollments": []
+    },
+    {
+        "full_name": "Pham Hoang Yen Nhi",
+        "username": "nhihoangyenpham",
+        "email": "nhihoangyenpham@swin.edu.au",
+        "password": "password123",
+        "major": "Public Relations",
+        "enrollments": []
+    },
+    {
+        "full_name": "Phan Le Ngoc Luu",
+        "username": "luulengocphan",
+        "email": "luulengocphan@swin.edu.au",
+        "password": "password123",
+        "major": "Media & Communications",
+        "enrollments": []
+    },
+    {
+        "full_name": "Truong My An",
+        "username": "anmytruong",
+        "email": "anmytruong@swin.edu.au",
+        "password": "password123",
+        "major": "Media & Communications",
+        "enrollments": []
+    },
+    {
+        "full_name": "Vo Phan Bao Thanh",
+        "username": "thanhphanbaovo",
+        "email": "thanhphanbaovo@swin.edu.au",
+        "password": "password123",
+        "major": "Media & Communications",
+        "enrollments": []
+    },
+    {
+        "full_name": "Le Thi Quynh Anh",
+        "username": "anhthiquynhle",
+        "email": "anhthiquynhle@swin.edu.au",
+        "password": "password123",
+        "major": "Media & Communications",
+        "enrollments": []
+    },
+    {
+        "full_name": "Le Ngoc Quynh Trang",
+        "username": "trangngocquynhle",
+        "email": "trangngocquynhle@swin.edu.au",
+        "password": "password123",
+        "major": "Media & Communications",
+        "enrollments": []
+    }
+]

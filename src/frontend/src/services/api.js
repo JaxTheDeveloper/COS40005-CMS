@@ -27,13 +27,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        if (error.response.status === 401) {
+        if (error.response && error.response.status === 401) {
             // Handle token refresh here
             const refreshToken = localStorage.getItem("refreshToken");
             if (refreshToken) {
                 try {
                     const response = await axios.post(
-                        `${API_URL}/token/refresh/`,
+                        `${API_URL}/api/token/refresh/`,
                         {
                             refresh: refreshToken,
                         }
@@ -55,7 +55,11 @@ api.interceptors.response.use(
 // Auth services
 export const authService = {
     login: async (email, password) => {
-        const response = await api.post("/token/", { email, password });
+        // Use compatibility endpoint which accepts email or username
+        const response = await api.post("/api/token/compat/", {
+            email,
+            password,
+        });
         localStorage.setItem("token", response.data.access);
         localStorage.setItem("refreshToken", response.data.refresh);
         return response.data;

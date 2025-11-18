@@ -13,7 +13,7 @@ import {
   TableRow,
   Paper
 } from '@mui/material';
-import axios from 'axios';
+import { api } from '../services/api';
 
 export default function SocialGold() {
   const [socialGold, setSocialGold] = useState(null);
@@ -28,8 +28,8 @@ export default function SocialGold() {
   const loadSocialGoldData = async () => {
     try {
       const [goldResponse, transactionsResponse] = await Promise.all([
-        axios.get('/api/social/social-gold/'),
-        axios.get('/api/social/transactions/')
+        api.get('/api/social/social-gold/'),
+        api.get('/api/social/transactions/')
       ]);
       
       setSocialGold(goldResponse.data[0]); // Assuming user has one social gold record

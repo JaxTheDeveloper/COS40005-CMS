@@ -6,11 +6,13 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from src.backend.users.views_api import TokenObtainPairCompatView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('rest_framework.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/compat/', TokenObtainPairCompatView.as_view(), name='token_obtain_pair_compat'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/users/', include('src.backend.users.urls')),
     path('api/academic/', include('src.backend.academic.urls')),

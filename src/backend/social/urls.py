@@ -9,5 +9,5 @@ router.register('transactions', SocialGoldTransactionViewSet, basename='social-g
 
 urlpatterns = [
     path('achievements/my/', views.my_achievements, name='my_achievements'),
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 ]

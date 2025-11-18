@@ -38,6 +38,15 @@ class Event(UnitAwareModel):
     def __str__(self):
         return f"{self.title} ({self.start})"
 
+    # Generated content fields (scaffold for GenAI & n8n integration)
+    # Stores generated snippets for different channels (social, email, article, ad)
+    generated_content = models.JSONField(default=dict, blank=True)
+    # generation status: idle, pending, ready, failed
+    generation_status = models.CharField(max_length=20, default='idle')
+    # metadata about the last generation (tone, brand_score, bias_flag, source)
+    generation_meta = models.JSONField(default=dict, blank=True)
+    last_generated_at = models.DateTimeField(null=True, blank=True)
+
 
 class Session(models.Model):
     SESSION_TYPES = (

@@ -1,0 +1,662 @@
+[
+    {
+        "code": "COS40003",
+        "name": "Concurrent Programming",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 3,
+                "meeting_day": "Mon",
+                "meeting_time": "09:00"
+            }
+        ]
+    },
+    {
+        "code": "COS40006",
+        "name": "Computing Technology Project B",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 4,
+                "meeting_day": "Tue",
+                "meeting_time": "10:00"
+            }
+        ]
+    },
+    {
+        "code": "COS30018",
+        "name": "Intelligent Systems",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 3,
+                "meeting_day": "Wed",
+                "meeting_time": "11:00"
+            }
+        ]
+    },
+    {
+        "code": "COS30019",
+        "name": "Introduction to Artificial Intelligence",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 4,
+                "meeting_day": "Thu",
+                "meeting_time": "13:00"
+            }
+        ]
+    },
+    {
+        "code": "COS30043",
+        "name": "Interface Design and Development",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 3,
+                "meeting_day": "Fri",
+                "meeting_time": "14:00"
+            }
+        ]
+    },
+    {
+        "code": "COS30082",
+        "name": "Applied Machine Learning",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 4,
+                "meeting_day": "Mon",
+                "meeting_time": "11:00"
+            }
+        ]
+    },
+    {
+        "code": "COS30049",
+        "name": "Computing Technology Innovation Project",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 3,
+                "meeting_day": "Tue",
+                "meeting_time": "09:00"
+            }
+        ]
+    },
+    {
+        "code": "COS30008",
+        "name": "Data Structures and Patterns",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 4,
+                "meeting_day": "Wed",
+                "meeting_time": "10:00"
+            }
+        ]
+    },
+    {
+        "code": "COS10009",
+        "name": "Introduction to Programming",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 200,
+                "class_hours": 4,
+                "meeting_day": "Thu",
+                "meeting_time": "09:00"
+            }
+        ]
+    },
+    {
+        "code": "COS10004",
+        "name": "Computer Systems",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 150,
+                "class_hours": 3,
+                "meeting_day": "Fri",
+                "meeting_time": "10:00"
+            }
+        ]
+    },
+    {
+        "code": "COS10025",
+        "name": "Technology in an Indigenous Context Project",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 80,
+                "class_hours": 3,
+                "meeting_day": "Mon",
+                "meeting_time": "13:00"
+            }
+        ]
+    },
+    {
+        "code": "BUS30032",
+        "name": "Business Consulting Project",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 60,
+                "class_hours": 4,
+                "meeting_day": "Tue",
+                "meeting_time": "14:00"
+            }
+        ]
+    },
+    {
+        "code": "INB30020",
+        "name": "Sustainable International Business Strategy",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 3,
+                "meeting_day": "Wed",
+                "meeting_time": "09:00"
+            }
+        ]
+    },
+    {
+        "code": "FIN20016",
+        "name": "Ethics and Intl Finance",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 60,
+                "class_hours": 4,
+                "meeting_day": "Thu",
+                "meeting_time": "11:00"
+            }
+        ]
+    },
+    {
+        "code": "MKT20021",
+        "name": "Integrated Marketing Communication",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 120,
+                "class_hours": 3,
+                "meeting_day": "Fri",
+                "meeting_time": "10:00"
+            }
+        ]
+    },
+    {
+        "code": "MKT30016",
+        "name": "Marketing Strategy and Planning",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 80,
+                "class_hours": 4,
+                "meeting_day": "Mon",
+                "meeting_time": "14:00"
+            }
+        ]
+    },
+    {
+        "code": "BUS30031",
+        "name": "Sustainable Business Practice",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 90,
+                "class_hours": 3,
+                "meeting_day": "Tue",
+                "meeting_time": "09:00"
+            }
+        ]
+    },
+    {
+        "code": "MGT20007",
+        "name": "Organisational Behaviour",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 70,
+                "class_hours": 4,
+                "meeting_day": "Wed",
+                "meeting_time": "10:00"
+            }
+        ]
+    },
+    {
+        "code": "PRM30001",
+        "name": "Project Management Essentials",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 60,
+                "class_hours": 3,
+                "meeting_day": "Thu",
+                "meeting_time": "09:00"
+            }
+        ]
+    },
+    {
+        "code": "PUB30001",
+        "name": "Event Management",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 50,
+                "class_hours": 4,
+                "meeting_day": "Fri",
+                "meeting_time": "11:00"
+            }
+        ]
+    },
+    {
+        "code": "COM30002",
+        "name": "Professional Practice: Client and Agency Management",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 60,
+                "class_hours": 3,
+                "meeting_day": "Mon",
+                "meeting_time": "10:00"
+            }
+        ]
+    },
+    {
+        "code": "ADV20003",
+        "name": "Networked Selves",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 40,
+                "class_hours": 4,
+                "meeting_day": "Tue",
+                "meeting_time": "11:00"
+            }
+        ]
+    },
+    {
+        "code": "BUS10015",
+        "name": "Creative Mindset and Entrepreneurship",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 120,
+                "class_hours": 3,
+                "meeting_day": "Wed",
+                "meeting_time": "13:00"
+            }
+        ]
+    },
+    {
+        "code": "ACC10007",
+        "name": "Financial Information for Decision Making",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 100,
+                "class_hours": 4,
+                "meeting_day": "Thu",
+                "meeting_time": "14:00"
+            }
+        ]
+    },
+    {
+        "code": "INB10002",
+        "name": "International Business Operations",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 80,
+                "class_hours": 3,
+                "meeting_day": "Fri",
+                "meeting_time": "09:00"
+            }
+        ]
+    },
+    {
+        "code": "MDA20026",
+        "name": "Data Narratives",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 50,
+                "class_hours": 4,
+                "meeting_day": "Mon",
+                "meeting_time": "14:00"
+            }
+        ]
+    },
+    {
+        "code": "MDA30021",
+        "name": "Social Media Industry Project",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 60,
+                "class_hours": 3,
+                "meeting_day": "Tue",
+                "meeting_time": "13:00"
+            }
+        ]
+    },
+    {
+        "code": "PUB20004",
+        "name": "Issues, Crisis and Risk Communication",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 70,
+                "class_hours": 4,
+                "meeting_day": "Wed",
+                "meeting_time": "11:00"
+            }
+        ]
+    },
+    {
+        "code": "MDA30020",
+        "name": "Media and Communications Industry Project",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 50,
+                "class_hours": 3,
+                "meeting_day": "Thu",
+                "meeting_time": "10:00"
+            }
+        ]
+    },
+    {
+        "code": "MDA10001",
+        "name": "Introduction to Media Studies",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 90,
+                "class_hours": 4,
+                "meeting_day": "Fri",
+                "meeting_time": "09:00"
+            }
+        ]
+    },
+    {
+        "code": "MDA10018",
+        "name": "Content Creator Lab",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 60,
+                "class_hours": 3,
+                "meeting_day": "Mon",
+                "meeting_time": "10:00"
+            }
+        ]
+    },
+    {
+        "code": "PUB10001",
+        "name": "Introduction to Public Relations Theory and Practice",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 40,
+                "class_hours": 4,
+                "meeting_day": "Tue",
+                "meeting_time": "09:00"
+            }
+        ]
+    },
+    {
+        "code": "DCO10007",
+        "name": "Visual Communication Studio",
+        "description": "",
+        "credit_points": 12.5,
+        "prerequisites": [],
+        "anti_requisites": [],
+        "offerings": [
+            {
+                "year": 2026,
+                "semester": "S1",
+                "enrollment_start": "2026-02-01T09:00:00Z",
+                "enrollment_end": "2026-06-01T17:00:00Z",
+                "capacity": 30,
+                "class_hours": 3,
+                "meeting_day": "Wed",
+                "meeting_time": "14:00"
+            }
+        ]
+    }
+]

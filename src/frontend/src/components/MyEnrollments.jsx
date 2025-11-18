@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Card, CardContent, Typography, Button, Chip, Grid } from '@mui/material';
-import axios from 'axios';
+import { api } from '../services/api';
 
 const statusColors = {
   'PENDING': 'warning',
@@ -21,8 +21,26 @@ export default function MyEnrollments() {
 
   const loadEnrollments = async () => {
     try {
-      const response = await axios.get('/api/enrollment/enrollments/');
-      setEnrollments(response.data);
+      const response = await api.get('/api/enrollment/enrollments/');
+      // Backend may return either an array or a paginated object { results: [...] }
+      let data = response.data;
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        if (Array.isArray(data.results)) {
+          data = data.results;
+        } else if (Array.isArray(data.enrollments)) {
+          data = data.enrollments;
+        } else {
+          // Unexpected shape - coerce to empty array and log for debugging
+          console.warn('Unexpected enrollments response shape:', data);
+          data = [];
+        }
+      }
+      // If the backend returned non-object (e.g., HTML login page) or any non-array, coerce to []
+      if (!Array.isArray(data)) {
+        console.warn('Enrollments response is not an array after normalization:', data);
+        data = [];
+      }
+      setEnrollments(data);
       setError(null);
     } catch (err) {
       setError('Failed to load enrollments');
@@ -34,7 +52,7 @@ export default function MyEnrollments() {
 
   const handleWithdraw = async (enrollmentId) => {
     try {
-      await axios.post(`/api/enrollment/enrollments/${enrollmentId}/withdraw/`);
+  await api.post(`/api/enrollment/enrollments/${enrollmentId}/withdraw/`);
       loadEnrollments(); // Reload after withdrawal
     } catch (err) {
       setError('Failed to withdraw from unit');

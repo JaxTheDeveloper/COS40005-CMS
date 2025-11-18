@@ -7,7 +7,10 @@ import { authService } from '../services/auth';
 
 const validationSchema = Yup.object({
   email: Yup.string()
+    .trim()
+    .transform((value) => (value ? value.toLowerCase() : value))
     .email('Enter a valid email')
+    .matches(/^[\w.%+-]+@swin\.edu\.au$/i, 'Please use your Swinburne email (@swin.edu.au)')
     .required('Email is required'),
   password: Yup.string()
     .min(8, 'Password should be of minimum 8 characters length')
@@ -64,8 +67,9 @@ export default function Login() {
             autoFocus
             value={formik.values.email}
             onChange={formik.handleChange}
-            error={formik.touched.email && Boolean(formik.errors.email)}
-            helperText={formik.touched.email && formik.errors.email}
+            onBlur={formik.handleBlur}
+            error={(formik.touched.email || formik.submitCount > 0) && Boolean(formik.errors.email)}
+            helperText={(formik.touched.email || formik.submitCount > 0) && formik.errors.email}
           />
           <TextField
             margin="normal"
@@ -78,8 +82,9 @@ export default function Login() {
             autoComplete="current-password"
             value={formik.values.password}
             onChange={formik.handleChange}
-            error={formik.touched.password && Boolean(formik.errors.password)}
-            helperText={formik.touched.password && formik.errors.password}
+            onBlur={formik.handleBlur}
+            error={(formik.touched.password || formik.submitCount > 0) && Boolean(formik.errors.password)}
+            helperText={(formik.touched.password || formik.submitCount > 0) && formik.errors.password}
           />
           {formik.errors.submit && (
             <Typography color="error" variant="body2" sx={{ mt: 2 }}>

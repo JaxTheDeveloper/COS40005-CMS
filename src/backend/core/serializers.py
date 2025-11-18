@@ -21,6 +21,9 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
 
 class TicketSerializer(serializers.ModelSerializer):
+    # Submitter should default to the requesting user when created through the API
+    submitter = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     class Meta:
         model = models.Ticket
         fields = '__all__'

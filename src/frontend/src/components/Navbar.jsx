@@ -177,6 +177,9 @@ export default function Navbar() {
               <MenuItem onClick={() => { handleCloseNavMenu(); navigate('/queries'); }}>
                 <Typography textAlign="center">Queries</Typography>
               </MenuItem>
+              <MenuItem onClick={() => { handleCloseNavMenu(); navigate('/events'); }}>
+                <Typography textAlign="center">Events</Typography>
+              </MenuItem>
               <MenuItem onClick={() => { handleCloseNavMenu(); navigate('/ask-ai'); }}>
                 <Typography textAlign="center">Ask AI</Typography>
               </MenuItem>
@@ -191,6 +194,7 @@ export default function Navbar() {
               indicatorColor="primary"
             >
               <Tab label="Dashboard" value="/dashboard/compsci" />
+              <Tab label="Events" value="/events" />
               <Tab label="Queries" value="/queries" />
               <Tab label="Ask AI" value="/ask-ai" />
             </Tabs>

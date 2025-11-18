@@ -7,6 +7,10 @@ import CSDashboard from "./pages/CS_Dashboard.jsx";
 import Login from "./pages/Login.jsx";
 import MyEnrollments from "./components/MyEnrollments.jsx";
 import SocialGold from "./components/SocialGold.jsx";
+import Profile from "./components/Profile.jsx";
+import Events from "./pages/Events.jsx";
+import CalendarPage from "./pages/Calendar.jsx";
+import EnrollSelect from "./pages/EnrollSelect.jsx";
 
 export default function App() {
   return (
@@ -28,6 +32,10 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/enrollments" element={<MyEnrollments />} />
           <Route path="/social-gold" element={<SocialGold />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/enrol/select" element={<EnrollSelect />} />
         </Routes>
       </main>
 
