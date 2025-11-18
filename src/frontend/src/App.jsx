@@ -17,11 +17,7 @@ export default function App() {
     <div className="app">
       <Navbar />
 
-      <div className="hero-image" role="img" aria-label="Campus">
-        <div className="hero-overlay">
-          <div className="hero-title">SWINBURNE VN</div>
-        </div>
-      </div>
+      
 
       <main className="container">
         <Routes>
