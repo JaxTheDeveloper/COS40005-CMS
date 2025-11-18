@@ -186,20 +186,6 @@ export default function Navbar() {
             </Menu>
           </Box>
 
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-            <Tabs 
-              value={currentTab} 
-              onChange={handleTabChange}
-              textColor="primary"
-              indicatorColor="primary"
-            >
-              <Tab label="Dashboard" value="/dashboard/compsci" />
-              <Tab label="Events" value="/events" />
-              <Tab label="Queries" value="/queries" />
-              <Tab label="Ask AI" value="/ask-ai" />
-            </Tabs>
-          </Box>
-
           {currentUser ? (
             <Box sx={{ flexGrow: 0 }}>
               <Tooltip title="Open settings">
