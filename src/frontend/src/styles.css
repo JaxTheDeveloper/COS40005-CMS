@@ -50,7 +50,7 @@ body{
 }
 .askai-input-row{display:flex}
 .askai-input{
-  flex:1;border:none;background:#9ca3af;color:#fff;padding:14px;border-radius:6px 0 0 0;
+  flex:1;border:none;background:#9ca3af;color:#000000;padding:14px;border-radius:6px 0 0 0;
 }
 .askai-input::placeholder{color:#e5e7eb}
 .askai-send{
