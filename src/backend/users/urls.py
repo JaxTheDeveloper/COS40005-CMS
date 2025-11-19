@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views.viewsets import UserViewSet
+from .views_api import StudentListView
 from .views.auth import CustomLoginView, AdminLoginView
 from .views.dashboard import dashboard_view, student_dashboard_view, convenor_dashboard_view
 from .views.profile import edit_profile
@@ -11,6 +12,7 @@ router.register('users', UserViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('students/', StudentListView.as_view(), name='student-list'),
     path('login/', CustomLoginView.as_view(), name='login'),
     path('admin/login/', AdminLoginView.as_view(), name='admin_login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),

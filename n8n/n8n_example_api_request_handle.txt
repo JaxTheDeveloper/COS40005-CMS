@@ -1,0 +1,10 @@
+const formData = new FormData();
+formData.append('file', csvFile); 
+
+await fetch('https://n8n.yoursystem.com/webhook/process-schedule', {
+  method: 'POST',
+  body: formData, 
+  headers: {
+    'X-API-KEY': 'n8n secret'
+  }
+});
