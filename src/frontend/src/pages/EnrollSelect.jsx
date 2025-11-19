@@ -136,15 +136,30 @@ export default function EnrollSelect() {
     grouped.electives.push(off);
   });
 
+  // Helper to extract unit level (first digit of numeric part)
+  const getUnitLevel = (code) => {
+    const match = (code || '').match(/(\d{5})/);
+    if (match) return match[1][0];
+    return null;
+  };
+
   const renderList = (items) => (
     <ul>
-      {items.map(it => (
-        <li key={it.id} style={{ marginBottom: 8 }}>
-          <strong>{it.unit?.code}</strong> — {it.unit?.name} <br />
-          <small>{it.notes}</small><br />
-          <button onClick={() => handleEnroll(it.id)}>Enroll</button>
-        </li>
-      ))}
+      {items.map(it => {
+        const code = it.unit?.code || '';
+        const level = getUnitLevel(code);
+        return (
+          <li key={it.id} style={{ marginBottom: 8 }}>
+            <strong>{code}</strong> — {it.unit?.name}
+            {level && (
+              <span style={{ marginLeft: 8, fontSize: 12, color: '#888', background: '#f3f3f3', borderRadius: 4, padding: '2px 6px' }}>Level {level}</span>
+            )}
+            <br />
+            <small>{it.notes}</small><br />
+            <button onClick={() => handleEnroll(it.id)}>Enroll</button>
+          </li>
+        );
+      })}
     </ul>
   );
 
