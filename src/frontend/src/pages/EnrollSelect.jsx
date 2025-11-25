@@ -1,219 +1,482 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Chip,
+  Grid,
+  Tabs,
+  Tab,
+  Alert,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  LinearProgress,
+  Stack,
+} from '@mui/material';
 import { api } from '../services/api';
 
-function parseNotes(notes) {
-  const result = { major: null, category: null };
-  if (!notes) return result;
-  const parts = notes.split(';').map(p => p.trim());
-  parts.forEach(p => {
-    if (p.startsWith('Major:')) result.major = p.replace('Major:', '').trim();
-    if (p.startsWith('Category:')) result.category = p.replace('Category:', '').trim();
-  });
-  return result;
+const statusColors = {
+  PENDING: 'warning',
+  ENROLLED: 'success',
+  WITHDRAWN: 'error',
+  COMPLETED: 'info',
+  FAILED: 'error',
+};
+
+const CARD_STATUS_META = {
+  passed: { label: 'Passed', color: 'success', bg: '#E8F5E9', border: '#C8E6C9' },
+  enrolled: { label: 'Enrolled', color: 'primary', bg: '#E3F2FD', border: '#BBDEFB' },
+  selected: { label: 'Selected', color: 'warning', bg: '#FFF8E1', border: '#FFE082' },
+  available: { label: 'Available', color: 'info', bg: '#E0F7FA', border: '#B2EBF2' },
+  failed: { label: 'Failed', color: 'error', bg: '#FFEBEE', border: '#FFCDD2' },
+  withdrawn: { label: 'Withdrawn', color: 'default', bg: '#F5F5F5', border: '#E0E0E0' },
+};
+
+const STATUS_FILTERS = [
+  { value: 'all', label: 'All' },
+  { value: 'available', label: 'Available' },
+  { value: 'selected', label: 'Selected' },
+  { value: 'enrolled', label: 'Enrolled' },
+  { value: 'passed', label: 'Passed' },
+  { value: 'failed', label: 'Failed' },
+];
+
+function TabPanel({ children, value, index }) {
+  return (
+    <div role="tabpanel" hidden={value !== index}>
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
 }
 
 export default function EnrollSelect() {
-  const [offerings, setOfferings] = useState([]);
-  const [user, setUser] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showDebug, setShowDebug] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('all');
   const [confirmOffering, setConfirmOffering] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
   const navigate = useNavigate();
 
+  // Hooks must be called before any conditional returns (React rules)
+  const filteredCards = useMemo(() => {
+    const offeringCards = dashboardData?.offering_cards || [];
+    if (statusFilter === 'all') return offeringCards;
+    return offeringCards.filter((card) => card.status_label === statusFilter);
+  }, [dashboardData, statusFilter]);
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [uResp, offResp] = await Promise.all([
-          api.get('/users/users/me/'),
-          api.get('/academic/offerings/?page_size=1000'),
-        ]);
-        setUser(uResp.data);
-        const offs = offResp.data.results || offResp.data || [];
-        setOfferings(offs);
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/enrollment/enrollments/dashboard/');
+      setDashboardData(response.data);
+      setError(null);
       } catch (err) {
         console.error(err);
-        setError('Failed to load offerings or user');
+      setError('Failed to load enrollment dashboard');
       } finally {
         setLoading(false);
       }
     };
-    load();
-  }, []);
 
-  const handleEnroll = (off) => {
-    setConfirmOffering(off);
+  const handleEnroll = (offering) => {
+    setConfirmOffering(offering);
   };
 
   const doEnroll = async (offeringId) => {
     setActionMessage(null);
     try {
   await api.post('/enrollment/enrollments/', { offering: offeringId });
-      setActionMessage({ type: 'success', text: 'Enrollment request submitted.' });
+      setActionMessage({ type: 'success', text: 'Enrollment request submitted successfully!' });
       setConfirmOffering(null);
-      // navigate to calendar to show results
+      await loadDashboard();
+      setTimeout(() => {
       navigate('/calendar');
+      }, 1500);
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data || (err.message || 'Enrollment failed');
-      setActionMessage({ type: 'error', text: JSON.stringify(msg) });
+      const msg =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        err.message ||
+        'Enrollment failed';
+      setActionMessage({ type: 'error', text: typeof msg === 'string' ? msg : JSON.stringify(msg) });
       setConfirmOffering(null);
     }
   };
 
-  if (loading) return <div>Loading available units...</div>;
-  if (error) return <div>{error}</div>;
-
-  const studentMajor = user?.department || null;
-
-  const grouped = { core: [], major: [], electives: [] };
-
-  // mapping majors to unit code prefixes that should be considered core
-  const majorPrefixMap = {
-    'Computer Science': ['COS', 'SWE', 'TNE'],
-    'Business': ['BUS', 'FIN', 'MKT', 'ACC', 'INB', 'MGT'],
-    'Media & Communications': ['MDA', 'DCO', 'COM', 'PUB'],
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
   };
 
-  const isCodeStartingWith1 = (code) => {
-    return typeof code === 'string' && /^1\d{4}/.test(code);
+  const handleStatusFilter = (value) => {
+    setStatusFilter(value);
   };
 
-  offerings.forEach(off => {
-    const notes = off.notes || '';
-    const meta = parseNotes(notes);
-    const unit = off.unit || {};
-    const unitMajor = unit.department || meta.major || null;
-    const category = meta.category || null;
-  const code = unit.code || '';
-  const numericMatch = (code.match(/\d+/) || [null])[0];
-  const levelDigit = numericMatch ? numericMatch.charAt(0) : null;
-  const isLevel2 = levelDigit === '2';
-  const isLevel34 = levelDigit === '3' || levelDigit === '4';
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-    // If we don't know the student's major yet, treat everything as electives except explicit core
-    if (!studentMajor) {
-      if (category === 'core') grouped.core.push(off);
-      else if (unitMajor) grouped.major.push(off);
-      else grouped.electives.push(off);
-      return;
-    }
-    // If a unit is level-2 (2xxxx) treat it as elective by default
-    if (isLevel2) {
-      grouped.electives.push(off);
-      return;
-    }
-    // Only show core and major units that belong to the student's major
-    const prefixes = majorPrefixMap[studentMajor] || [];
-    let consideredCore = false;
-    if (category === 'core') consideredCore = true;
-    // For Computer Science, also treat codes starting with 1xxxx as core
-    if (!consideredCore && studentMajor === 'Computer Science' && isCodeStartingWith1(code)) consideredCore = true;
-    // treat code prefixes as core if they match the major
-    if (!consideredCore && prefixes.length) {
-      for (const p of prefixes) {
-        if (code.startsWith(p)) {
-          consideredCore = true;
-          break;
-        }
-      }
-    }
+  if (error) {
+    return (
+      <Box p={3}>
+        <Alert severity="error">{error}</Alert>
+      </Box>
+    );
+  }
 
-    if (consideredCore && unitMajor === studentMajor) {
-      grouped.core.push(off);
-      return;
-    }
+  if (!dashboardData) {
+    return (
+      <Box p={3}>
+        <Alert severity="info">No enrollment data available</Alert>
+      </Box>
+    );
+  }
 
-    // major column: unit's major must match student's major and be level-3/4 or match major prefixes
-    if (unitMajor === studentMajor && (isLevel34 || prefixes.some(p => code.startsWith(p)))) {
-      grouped.major.push(off);
-      return;
-    }
+  const {
+    past_enrollments,
+    current_enrollments,
+    statistics,
+  } = dashboardData;
 
-    // everything else is elective
-    grouped.electives.push(off);
-  });
-
-  // Helper to extract unit level (first digit of numeric part)
-  const getUnitLevel = (code) => {
-    const match = (code || '').match(/(\d{5})/);
-    if (match) return match[1][0];
-    return null;
-  };
-
-  const renderList = (items) => (
-    <ul>
-      {items.map(it => {
-        const code = it.unit?.code || '';
-        const level = getUnitLevel(code);
+  const renderStatusFilters = () => (
+    <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }}>
+      {STATUS_FILTERS.map((filter) => {
+        const isActive = statusFilter === filter.value;
+        const meta = CARD_STATUS_META[filter.value] || {};
         return (
-          <li key={it.id} style={{ marginBottom: 8 }}>
-            <strong>{code}</strong> — {it.unit?.name}
-            {level && (
-              <span style={{ marginLeft: 8, fontSize: 12, color: '#888', background: '#f3f3f3', borderRadius: 4, padding: '2px 6px' }}>Level {level}</span>
-            )}
-            <br />
-            <small>{it.notes}</small><br />
-            <button onClick={() => handleEnroll(it.id)}>Enroll</button>
-          </li>
+          <Chip
+            key={filter.value}
+            label={filter.label}
+            color={isActive && meta.color ? meta.color : 'default'}
+            variant={isActive ? 'filled' : 'outlined'}
+            onClick={() => handleStatusFilter(filter.value)}
+            sx={{ textTransform: 'capitalize' }}
+          />
         );
       })}
-    </ul>
+    </Stack>
   );
 
+  const renderOfferingCard = (card) => {
+    const meta = CARD_STATUS_META[card.status_label] || CARD_STATUS_META.available;
+    const attendance = card.attendance_summary || {};
+    const attendanceRate = attendance.attendance_rate ?? null;
+    const missingPrereqs = card.missing_prerequisites || [];
+    const canEnroll = card.can_enroll;
+    const offering = card.offering || {};
+    const unit = offering.unit || {};
+
+    return (
+      <Grid item xs={12} md={6} lg={4} key={`${offering.id}-${card.status_label}`}>
+        <Card
+          sx={{
+            height: '100%',
+            borderLeft: `4px solid ${meta.border}`,
+            backgroundColor: meta.bg,
+          }}
+        >
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+              <Box>
+                <Typography variant="h6">{unit.code}</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  {unit.name}
+                </Typography>
+              </Box>
+              <Chip label={meta.label} color={meta.color} size="small" />
+            </Box>
+
+            <Typography variant="body2" color="textSecondary">
+              {offering.semester} {offering.year} • {unit.credit_points || 0} CP
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 0.5 }}>
+              {card.schedule_summary}
+            </Typography>
+            {card.instructor && (
+              <Typography variant="body2" color="textSecondary">
+                Instructor: {card.instructor.name}
+              </Typography>
+            )}
+
+            {card.grade && (
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                Grade: {card.grade} {card.marks ? `(${card.marks}%)` : ''}
+              </Typography>
+            )}
+
+            {attendanceRate !== null && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="caption" color="textSecondary">
+                  Attendance {attendanceRate}%
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={Math.min(attendanceRate, 100)}
+                  sx={{ height: 6, borderRadius: 3, mt: 0.5 }}
+                />
+                <Typography variant="caption" color="textSecondary">
+                  Present {attendance.present || 0} • Late {attendance.late || 0} • Absent{' '}
+                  {attendance.absent || 0}
+                </Typography>
+              </Box>
+            )}
+
+            {card.status_label === 'available' && !card.prerequisites_met && missingPrereqs.length > 0 && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                Missing prerequisites: {missingPrereqs.map((p) => p.code).join(', ')}
+              </Alert>
+            )}
+
+            <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              {card.status_label === 'available' && (
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => handleEnroll(offering)}
+                  disabled={!canEnroll}
+                >
+                  Enroll
+                </Button>
+              )}
+              {card.status_label === 'selected' && (
+                <Chip label="Pending approval" color="warning" size="small" />
+              )}
+              {card.status_label === 'enrolled' && (
+                <Button variant="outlined" size="small" onClick={() => navigate('/calendar')}>
+                  View schedule
+                </Button>
+              )}
+              {card.status_label === 'passed' && (
+                <Button variant="outlined" size="small" onClick={() => navigate('/profile')}>
+                  View transcript
+                </Button>
+              )}
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+    );
+  };
+
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ display: 'flex', gap: 24 }}>
-        <div style={{ flex: 1 }}>
-          <h3>Core</h3>
-          <div style={{ color: '#666', marginBottom: 8 }}>Core units for your major</div>
-          {grouped.core.length ? renderList(grouped.core) : <div>No core units found.</div>}
-        </div>
-        <div style={{ flex: 1 }}>
-          <h3>Major ({studentMajor || 'Unknown'})</h3>
-          <div style={{ color: '#666', marginBottom: 8 }}>Major units for your program</div>
-          {grouped.major.length ? renderList(grouped.major) : <div>No major units found.</div>}
-        </div>
-        <div style={{ flex: 1 }}>
-          <h3>Electives</h3>
-          <div style={{ color: '#666', marginBottom: 8 }}>Elective options</div>
-          {grouped.electives.length ? renderList(grouped.electives) : <div>No electives found.</div>}
-        </div>
-      </div>
+    <Box sx={{ width: '100%', p: 3 }}>
+      {/* Statistics Cards */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>Completed Units</Typography>
+              <Typography variant="h4">{statistics?.total_completed || 0}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>Currently Enrolled</Typography>
+              <Typography variant="h4">{statistics?.current_enrolled || 0}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>Pending Approval</Typography>
+              <Typography variant="h4">{statistics?.pending_approval || 0}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>Available Units</Typography>
+              <Typography variant="h4">{statistics?.available_count || 0}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-      <div style={{ position: 'absolute', right: 16, top: 84 }}>
-        <button onClick={() => setShowDebug(d => !d)} style={{ marginBottom: 8 }}>{showDebug ? 'Hide debug' : 'Show debug'}</button>
-        {showDebug && (
-          <div style={{ padding: 8, background: '#fff', border: '1px solid #eee', borderRadius: 4, maxWidth: 360 }}>
-            <strong>Debug: current user</strong>
-            <pre style={{ fontSize: 11, maxHeight: 200, overflow: 'auto' }}>{JSON.stringify(user, null, 2)}</pre>
-          </div>
-        )}
-      </div>
+      {/* Tabs */}
+      <Card>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={tabValue} onChange={handleTabChange}>
+            <Tab label="Unit Planner" />
+            <Tab label="Current Enrollments" />
+            <Tab label="Past Enrollments" />
+          </Tabs>
+        </Box>
 
-      {/* action message */}
+        {/* Unit Planner Tab */}
+        <TabPanel value={tabValue} index={0}>
+          {renderStatusFilters()}
+          {filteredCards.length ? (
+            <Grid container spacing={2}>
+              {filteredCards.map((card) => renderOfferingCard(card))}
+            </Grid>
+          ) : (
+            <Typography color="textSecondary">No units found for this filter.</Typography>
+          )}
+        </TabPanel>
+
+        {/* Current Enrollments Tab */}
+        <TabPanel value={tabValue} index={1}>
+          {current_enrollments && current_enrollments.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Unit Code</TableCell>
+                    <TableCell>Unit Name</TableCell>
+                    <TableCell>Semester</TableCell>
+                    <TableCell>Year</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Credit Points</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {current_enrollments.map(enrollment => (
+                    <TableRow key={enrollment.id}>
+                      <TableCell>{enrollment.offering?.unit?.code}</TableCell>
+                      <TableCell>{enrollment.offering?.unit?.name}</TableCell>
+                      <TableCell>{enrollment.offering?.semester}</TableCell>
+                      <TableCell>{enrollment.offering?.year}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={enrollment.status} 
+                          color={statusColors[enrollment.status] || 'default'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{enrollment.offering?.unit?.credit_points || 0}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography color="textSecondary">No current enrollments</Typography>
+          )}
+        </TabPanel>
+
+        {/* Past Enrollments Tab */}
+        <TabPanel value={tabValue} index={2}>
+          {past_enrollments && past_enrollments.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Unit Code</TableCell>
+                    <TableCell>Unit Name</TableCell>
+                    <TableCell>Semester</TableCell>
+                    <TableCell>Year</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Grade</TableCell>
+                    <TableCell>Marks</TableCell>
+                    <TableCell>Credit Points</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {past_enrollments.map(enrollment => (
+                    <TableRow key={enrollment.id}>
+                      <TableCell>{enrollment.offering?.unit?.code}</TableCell>
+                      <TableCell>{enrollment.offering?.unit?.name}</TableCell>
+                      <TableCell>{enrollment.offering?.semester}</TableCell>
+                      <TableCell>{enrollment.offering?.year}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={enrollment.status} 
+                          color={statusColors[enrollment.status] || 'default'}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell>{enrollment.grade || '-'}</TableCell>
+                      <TableCell>{enrollment.marks || '-'}</TableCell>
+                      <TableCell>{enrollment.offering?.unit?.credit_points || 0}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography color="textSecondary">No past enrollments</Typography>
+          )}
+        </TabPanel>
+      </Card>
+
+      {/* Action Message */}
       {actionMessage && (
-        <div style={{ position: 'fixed', left: 20, bottom: 20, padding: 12, borderRadius: 6, background: actionMessage.type === 'success' ? '#e6ffed' : '#fff1f0', border: '1px solid #ccc' }}>
-          <strong>{actionMessage.type === 'success' ? 'Success' : 'Error'}:</strong> {actionMessage.text}
-        </div>
+        <Alert 
+          severity={actionMessage.type} 
+          sx={{ position: 'fixed', bottom: 20, left: 20, right: 20, zIndex: 9999 }}
+          onClose={() => setActionMessage(null)}
+        >
+          {actionMessage.text}
+        </Alert>
       )}
 
-      {/* confirmation modal */}
+      {/* Confirmation Dialog */}
+      <Dialog open={!!confirmOffering} onClose={() => setConfirmOffering(null)}>
+        <DialogTitle>Confirm Enrollment</DialogTitle>
+        <DialogContent>
       {confirmOffering && (
-        <div style={{ position: 'fixed', left: 0, top: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', padding: 20, borderRadius: 6, width: 480 }}>
-            <h4>Confirm enrollment</h4>
-            <p><strong>{confirmOffering.unit?.code}</strong> — {confirmOffering.unit?.name}</p>
-            <p style={{ color: '#666' }}>{confirmOffering.notes}</p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
-              <button onClick={() => setConfirmOffering(null)}>Cancel</button>
-              <button onClick={() => doEnroll(confirmOffering.id)} style={{ background: '#1976d2', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 4 }}>Confirm Enroll</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            <>
+              <Typography variant="h6">{confirmOffering.unit?.code}</Typography>
+              <Typography variant="body2" color="textSecondary">
+                {confirmOffering.unit?.name}
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 2 }}>
+                <strong>Semester:</strong> {confirmOffering.semester} {confirmOffering.year}
+              </Typography>
+              <Typography variant="body2">
+                <strong>Credit Points:</strong> {confirmOffering.unit?.credit_points || 0}
+              </Typography>
+              {confirmOffering.notes && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <strong>Notes:</strong> {confirmOffering.notes}
+                </Typography>
+              )}
+              {!confirmOffering.prerequisites_met && confirmOffering.missing_prerequisites?.length > 0 && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  Cannot enroll: Missing prerequisites: {confirmOffering.missing_prerequisites.map(p => p.code).join(', ')}
+                </Alert>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOffering(null)}>Cancel</Button>
+          <Button 
+            onClick={() => doEnroll(confirmOffering?.id)} 
+            variant="contained"
+            disabled={!confirmOffering?.prerequisites_met}
+          >
+            Confirm Enrollment
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

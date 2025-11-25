@@ -136,3 +136,80 @@ class EnrollmentApproval(models.Model):
         # Update current enrollment count
         self.enrollment.offering.current_enrollment = models.F('current_enrollment') + 1
         self.enrollment.offering.save()
+
+
+class Transcript(models.Model):
+    """
+    Academic transcript tracking past enrollments and academic history
+    """
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transcripts')
+    enrollment = models.OneToOneField(Enrollment, on_delete=models.CASCADE, related_name='transcript_entry')
+    
+    # Academic details
+    unit_code = models.CharField(max_length=20)  # Denormalized for easier querying
+    unit_name = models.CharField(max_length=200)  # Denormalized
+    semester = models.CharField(max_length=2)  # S1, S2, S3, SS, WS
+    year = models.IntegerField()
+    credit_points = models.IntegerField(default=0)
+    
+    # Grade information
+    grade = models.CharField(max_length=2, blank=True)  # HD, D, C, P, F, etc.
+    marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    grade_point = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)  # GPA contribution
+    
+    # Status
+    status = models.CharField(max_length=20, choices=Enrollment.STATUS_CHOICES)
+    completion_date = models.DateTimeField(null=True, blank=True)
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-year', 'semester', 'unit_code']
+        indexes = [
+            models.Index(fields=['student', '-year', 'semester']),
+            models.Index(fields=['student', 'status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.student.email} - {self.unit_code} ({self.semester} {self.year})"
+    
+    def calculate_grade_point(self):
+        """Calculate grade point based on grade"""
+        grade_points = {
+            'HD': 4.0, 'D': 3.0, 'C': 2.0, 'P': 1.0, 'F': 0.0,
+            'A+': 4.0, 'A': 4.0, 'A-': 3.7,
+            'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+            'C+': 2.3, 'C': 2.0, 'C-': 1.7,
+            'D+': 1.3, 'D': 1.0, 'F': 0.0
+        }
+        return grade_points.get(self.grade.upper(), None)
+    
+    def save(self, *args, **kwargs):
+        # Auto-populate from enrollment if not set
+        if self.enrollment:
+            if not self.unit_code:
+                self.unit_code = self.enrollment.offering.unit.code
+            if not self.unit_name:
+                self.unit_name = self.enrollment.offering.unit.name
+            if not self.semester:
+                self.semester = self.enrollment.offering.semester
+            if not self.year:
+                self.year = self.enrollment.offering.year
+            if not self.credit_points:
+                self.credit_points = self.enrollment.offering.unit.credit_points
+            if not self.grade:
+                self.grade = self.enrollment.grade
+            if not self.marks:
+                self.marks = self.enrollment.marks
+            if not self.status:
+                self.status = self.enrollment.status
+            if not self.completion_date:
+                self.completion_date = self.enrollment.completion_date
+            
+            # Calculate grade point
+            if self.grade and not self.grade_point:
+                self.grade_point = self.calculate_grade_point()
+        
+        super().save(*args, **kwargs)

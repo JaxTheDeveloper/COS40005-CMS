@@ -1,10 +1,11 @@
 from django.urls import path, include
 from . import views
 from rest_framework.routers import DefaultRouter
-from .views_api import EnrollmentViewSet
+from .views_api import EnrollmentViewSet, TranscriptViewSet
 
 router = DefaultRouter()
 router.register('enrollments', EnrollmentViewSet, basename='enrollment')
+router.register('transcripts', TranscriptViewSet, basename='transcript')
 
 urlpatterns = [
     # Include DRF router URLs first so API endpoints (e.g. /enrollments/) are handled by the ViewSet.

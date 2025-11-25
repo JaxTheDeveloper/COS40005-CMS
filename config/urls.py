@@ -7,6 +7,10 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from src.backend.users.views_api import TokenObtainPairCompatView
+try:
+    from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+except Exception:
+    SpectacularAPIView = SpectacularSwaggerView = SpectacularRedocView = None
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -19,6 +23,16 @@ urlpatterns = [
     path('api/core/', include('src.backend.core.urls')),
     path('api/enrollment/', include('src.backend.enrollment.urls')),
     path('api/social/', include('src.backend.social.urls')),
+
+    # OpenAPI / Swagger schema and UI (drf-spectacular)
+    # These endpoints will be available when drf-spectacular is installed.
+    *(
+        [] if not SpectacularAPIView else [
+            path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+            path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+            path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+        ]
+    ),
 
     # Web auth and dashboard routes
     path('', include('src.backend.users.urls')),

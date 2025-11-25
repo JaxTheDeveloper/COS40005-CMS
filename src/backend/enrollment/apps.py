@@ -5,3 +5,6 @@ class EnrollmentConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'src.backend.enrollment'
     verbose_name = 'Course Enrollment'
+    
+    def ready(self):
+        import src.backend.enrollment.signals  # noqa

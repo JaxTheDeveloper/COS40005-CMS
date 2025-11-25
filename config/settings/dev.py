@@ -13,3 +13,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Email backend for development
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# n8n webhook used for CSV imports in development (set to your ngrok or n8n URL)
+N8N_IMPORT_WEBHOOK = 'https://conditionally-brimful-exie.ngrok-free.dev/webhook-test/import-schedule'

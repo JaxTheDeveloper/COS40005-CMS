@@ -12,6 +12,9 @@ import Profile from "./components/Profile.jsx";
 import Events from "./pages/Events.jsx";
 import CalendarPage from "./pages/Calendar.jsx";
 import EnrollSelect from "./pages/EnrollSelect.jsx";
+import TeachingDashboard from "./pages/TeachingDashboard.jsx";
+import StaffEventManager from "./pages/StaffEventManager.jsx";
+import StudentNotifications from "./pages/StudentNotifications.jsx";
 
 import "./App.css";
 import { authService } from "./services/auth";
@@ -49,6 +52,9 @@ export default function App() {
           <Route path="/events" element={<Events />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/enrol/select" element={<EnrollSelect />} />
+          <Route path="/teaching" element={<TeachingDashboard />} />
+          <Route path="/staff/events" element={<StaffEventManager />} />
+          <Route path="/notifications" element={<StudentNotifications />} />
         </Routes>
       </main>
       <footer className="footer">

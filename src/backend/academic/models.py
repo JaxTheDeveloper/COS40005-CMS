@@ -33,7 +33,7 @@ class Unit(models.Model):
     description = models.TextField(blank=True)
     credit_points = models.IntegerField(default=0)
     prerequisites = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='required_for')
-    anti_requisites = models.ManyToManyField('self', blank=True, symmetrical=True, related_name='incompatible_with')
+    anti_requisites = models.ManyToManyField('self', blank=True, symmetrical=True)
     convenor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='academic_units_convened')
     department = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
@@ -62,6 +62,7 @@ class SemesterOffering(models.Model):
     SEMESTER_CHOICES = [
         ('S1', 'Semester 1'),
         ('S2', 'Semester 2'),
+        ('S3', 'Semester 3'),
         ('SS', 'Summer Session'),
         ('WS', 'Winter Session'),
     ]

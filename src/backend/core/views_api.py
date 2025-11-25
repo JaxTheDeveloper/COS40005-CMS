@@ -177,6 +177,148 @@ class EventViewSet(viewsets.ModelViewSet):
 
         return Response({'detail': 'Saved'}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['post'], url_path='import-csv', permission_classes=[IsStaff])
+    def import_csv(self, request):
+        """
+        Staff-only endpoint to upload CSV and forward to n8n webhook.
+        Expected CSV columns: title, description, start, end, location, visibility, related_unit_id
+        """
+        import csv
+        import io
+        from django.conf import settings
+
+        # Accept form-data key 'data' to match the external webhook/postman example.
+        # Keep backward compatibility with 'file'.
+        file = request.FILES.get('data') or request.FILES.get('file')
+        if not file:
+            return Response({'error': 'No file provided (expected form field "data" with uploaded file)'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # We still read a subset of the CSV locally to validate it's not empty,
+            # but we forward the original uploaded file to n8n so n8n can parse it.
+            try:
+                stream = io.TextIOWrapper(file.file, encoding='utf-8')
+                reader = csv.DictReader(stream)
+                rows = list(reader)
+            except Exception:
+                raw = file.read()
+                if isinstance(raw, bytes):
+                    text = raw.decode('utf-8')
+                else:
+                    text = str(raw)
+                reader = csv.DictReader(io.StringIO(text))
+                rows = list(reader)
+
+            if not rows:
+                return Response({'error': 'CSV is empty'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Forward original file to n8n webhook as multipart/form-data with field 'data'
+            n8n_webhook = getattr(settings, 'N8N_IMPORT_WEBHOOK', None)
+            if not n8n_webhook:
+                # In dev, return parsed rows for convenience
+                if getattr(settings, 'DEBUG', False):
+                    return Response({'message': f'CSV parsed (dev mode): {len(rows)} events', 'events': rows}, status=status.HTTP_200_OK)
+                else:
+                    return Response({'error': 'n8n webhook not configured'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+            n8n_resp = {}
+            # Try using requests if available (preferred)
+            try:
+                import requests as _requests
+                # Rewind the uploaded file (in case earlier reads consumed it)
+                try:
+                    file.seek(0)
+                except Exception:
+                    pass
+                files = {'data': (getattr(file, 'name', 'upload.csv'), file, getattr(file, 'content_type', 'text/csv'))}
+                data = {'imported_by': request.user.email or '', 'timestamp': timezone.now().isoformat()}
+                resp = _requests.post(n8n_webhook, files=files, data=data, timeout=60)
+                resp.raise_for_status()
+                try:
+                    n8n_resp = resp.json() if resp.content else {}
+                except Exception:
+                    n8n_resp = {'status_text': resp.text}
+            except Exception:
+                # Fallback: build multipart/form-data body manually and use urllib
+                try:
+                    import uuid, json as _json
+                    from urllib.request import Request, urlopen
+                    from urllib.error import HTTPError, URLError
+
+                    boundary = '----WebKitFormBoundary' + uuid.uuid4().hex
+                    crlf = '\r\n'
+                    parts = []
+
+                    # text fields
+                    text_fields = {
+                        'imported_by': request.user.email or '',
+                        'timestamp': timezone.now().isoformat(),
+                    }
+                    for name, value in text_fields.items():
+                        parts.append(f'--{boundary}'.encode('utf-8'))
+                        parts.append(f'Content-Disposition: form-data; name="{name}"'.encode('utf-8'))
+                        parts.append(b'')
+                        parts.append(str(value).encode('utf-8'))
+
+                    # file field
+                    try:
+                        file.seek(0)
+                    except Exception:
+                        pass
+                    file_bytes = file.read()
+                    filename = getattr(file, 'name', 'upload.csv')
+                    content_type = getattr(file, 'content_type', 'text/csv') or 'text/csv'
+
+                    parts.append(f'--{boundary}'.encode('utf-8'))
+                    parts.append(f'Content-Disposition: form-data; name="data"; filename="{filename}"'.encode('utf-8'))
+                    parts.append(f'Content-Type: {content_type}'.encode('utf-8'))
+                    parts.append(b'')
+                    if isinstance(file_bytes, str):
+                        file_bytes = file_bytes.encode('utf-8')
+                    parts.append(file_bytes)
+
+                    parts.append(f'--{boundary}--'.encode('utf-8'))
+
+                    body = crlf.encode('utf-8').join(parts)
+                    req = Request(n8n_webhook, data=body, headers={'Content-Type': f'multipart/form-data; boundary={boundary}'})
+                    with urlopen(req, timeout=60) as fh:
+                        resp_bytes = fh.read()
+                        if resp_bytes:
+                            try:
+                                n8n_resp = _json.loads(resp_bytes.decode('utf-8'))
+                            except Exception:
+                                n8n_resp = {'status_text': resp_bytes.decode('utf-8')}
+                        else:
+                            n8n_resp = {}
+                except HTTPError as he:
+                    return Response({'error': f'n8n webhook HTTP error: {str(he)}'}, status=status.HTTP_502_BAD_GATEWAY)
+                except URLError as ue:
+                    return Response({'error': f'n8n webhook connection error: {str(ue)}'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+                except Exception as exc:
+                    return Response({'error': f'n8n webhook unknown error: {str(exc)}'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+            # Successful forward - return a friendly message indicating the schedule was uploaded
+            return Response({
+                'message': f'Successfully uploaded schedule to n8n: {len(rows)} rows',
+                'n8n_response': n8n_resp
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['put'], permission_classes=[IsStaff])
+    def refine_content(self, request, pk=None):
+        """
+        Staff-only: update event generated_content, generation_status and generation_meta.
+        Useful for refining AI-generated content before publishing.
+        """
+        event = self.get_object()
+        event.generated_content = request.data.get('generated_content', event.generated_content)
+        event.generation_status = request.data.get('generation_status', event.generation_status)
+        event.generation_meta = request.data.get('generation_meta', event.generation_meta)
+        event.save()
+
+        return Response(serializers.EventSerializer(event).data)
 
 
 class SessionViewSet(viewsets.ModelViewSet):
