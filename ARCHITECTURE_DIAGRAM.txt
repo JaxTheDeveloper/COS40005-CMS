@@ -1,0 +1,264 @@
+FRONTEND-ONLY DEVELOPMENT ARCHITECTURE
+=====================================
+
+Your Setup:
+===========
+
+┌─────────────────────────────────────────────────────────────┐
+│                   Your Development Machine                   │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌───────────────────────────────────────┐                 │
+│  │    React Frontend (npm start)         │                 │
+│  │    Port 3000                          │                 │
+│  │    src/frontend/                      │                 │
+│  │                                       │                 │
+│  │    - Edit .jsx files                  │                 │
+│  │    - Browser auto-refreshes           │                 │
+│  │    - Console shows errors             │                 │
+│  │    - Network tab shows API calls      │                 │
+│  └───────┬───────────────────────────────┘                 │
+│          │ HTTP Calls                                       │
+│          │ http://localhost:8000/api/                       │
+│          │ (CORS enabled)                                   │
+│          ↓                                                   │
+│          ┌─────────────────────────────────────┐            │
+│          │   Docker Backend (Running)          │            │
+│          │   docker-compose-dev.yaml           │            │
+│          └─────────────────────────────────────┘            │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+                           ↓↓↓
+
+┌─────────────────────────────────────────────────────────────┐
+│              Docker Container Services                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────────┐  ┌──────────────────────┐        │
+│  │   Django Backend     │  │   PostgreSQL DB      │        │
+│  │   Container          │  │   Container          │        │
+│  │   Port: 8000         │  │   Port: 5432         │        │
+│  │   cos40005_backend   │  │   cos40005_postgres  │        │
+│  └──────────────────────┘  └──────────────────────┘        │
+│                                                              │
+│  ┌──────────────────────┐  ┌──────────────────────┐        │
+│  │   Redis Cache        │  │   PgAdmin (optional) │        │
+│  │   Container          │  │   Container          │        │
+│  │   Port: 6379         │  │   Port: 5050         │        │
+│  │   cos40005_redis     │  │   cos40005_pgadmin   │        │
+│  └──────────────────────┘  └──────────────────────┘        │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+
+
+Communication Flow:
+==================
+
+User Action (Browser)
+    ↓
+React Component (src/frontend/src/components/)
+    ↓
+Axios API Call (to http://localhost:8000/api/)
+    ↓
+Django Backend (Docker Container)
+    ↓
+PostgreSQL Database (Docker Container)
+    ↓
+Response Data (JSON)
+    ↓
+React Component Updates UI
+    ↓
+Browser Shows Result
+
+
+File Organization:
+=================
+
+Your Project:
+├── src/
+│   ├── frontend/                ← YOU ARE HERE (npm start)
+│   │   ├── src/
+│   │   │   ├── components/      ← Edit these
+│   │   │   ├── pages/           ← Edit these
+│   │   │   ├── App.js           ← Edit this
+│   │   │   └── index.js
+│   │   ├── package.json
+│   │   ├── .env                 ← Already configured ✅
+│   │   └── README.md
+│   │
+│   └── backend/                 ← RUNS IN DOCKER (don't touch)
+│       ├── users/
+│       ├── academic/
+│       ├── core/
+│       └── ...
+│
+├── docker-compose-dev.yaml      ← Run this once
+├── Dockerfile.dev
+├── config/
+├── scripts/
+└── [Other files]
+
+
+Development Commands:
+====================
+
+TERMINAL 1 (Start Backend):
+  cd d:\Work\COS40005-CMS
+  docker-compose -f docker-compose-dev.yaml up -d
+  
+  Starts:
+  - PostgreSQL Database
+  - Redis Cache
+  - Django Backend
+  - PgAdmin (optional)
+  
+  Check: docker ps
+
+TERMINAL 2 (Start Frontend):
+  cd d:\Work\COS40005-CMS\src\frontend
+  npm install     (first time only)
+  npm start       (every dev session)
+  
+  Opens: http://localhost:3000 automatically
+
+
+API Endpoints Available:
+=======================
+
+Backend is at: http://localhost:8000/api/
+
+Main endpoints:
+  GET    /api/events/          - List all events
+  POST   /api/events/          - Create new event
+  GET    /api/units/           - List all units
+  POST   /api/units/           - Create new unit
+  GET    /api/users/           - List all users
+  GET    /api/enrollments/     - List enrollments
+  GET    /api/tickets/         - List support tickets
+
+Full list available at:
+  http://localhost:8000/api/ (when backend is running)
+
+
+Browser DevTools:
+================
+
+Press F12 to open Browser DevTools:
+
+Console Tab:
+  - See JavaScript errors
+  - See console.log() output
+  - Test API calls with fetch()
+
+Network Tab:
+  - See all API calls
+  - Check response status
+  - Inspect response data
+  - See request headers
+
+React Tab (install React DevTools extension):
+  - Inspect React components
+  - View component props
+  - Check component state
+
+Elements Tab:
+  - Inspect HTML structure
+  - Check CSS styles
+  - Test HTML changes
+
+
+Example Code to Test API:
+=========================
+
+In browser console (F12):
+
+// Test if backend is running
+fetch('http://localhost:8000/api/')
+  .then(r => r.json())
+  .then(data => console.log(data))
+
+// Get all events
+fetch('http://localhost:8000/api/events/')
+  .then(r => r.json())
+  .then(data => console.log(data))
+
+// Create new event
+fetch('http://localhost:8000/api/events/', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({title: 'My Event'})
+})
+  .then(r => r.json())
+  .then(data => console.log(data))
+
+
+Troubleshooting:
+===============
+
+Problem: Blank page on http://localhost:3000
+Solution: 
+  - Check backend is running: docker ps
+  - Check browser console: F12 → Console tab
+  - Restart backend: docker-compose restart
+
+Problem: API calls showing 404/500 in Network tab
+Solution:
+  - View backend logs: docker logs cos40005_backend
+  - Check API URL in frontend .env
+  - Make sure backend is running
+
+Problem: CORS error in console
+Solution:
+  - Check DJANGO_SETTINGS_MODULE=config.settings.dev
+  - CORS is already enabled in dev settings
+  - Restart backend
+
+Problem: Port 3000 already in use
+Solution:
+  - Use different port: PORT=3001 npm start
+  - Or kill process using port 3000
+  - Or stop other React apps
+
+Problem: npm install takes forever
+Solution:
+  - npm cache clean --force
+  - rm -rf node_modules
+  - npm install
+
+
+Your Setup Summary:
+==================
+
+✅ Backend: Separate Docker containers (not touched by you)
+✅ Frontend: React app you run locally (npm start)
+✅ Database: PostgreSQL in Docker
+✅ Cache: Redis in Docker
+✅ API Connection: Configured in .env file
+✅ CORS: Already enabled on backend
+✅ Auto-reload: Enabled on frontend
+✅ Debugging: Full browser DevTools support
+
+
+What You Do:
+===========
+
+1. Start backend containers (one command)
+2. Run frontend with npm start
+3. Edit React files
+4. Browser refreshes automatically
+5. Test API in Network tab
+6. Commit changes
+
+That's it! Very clean and simple setup. 🎉
+
+
+Get Started Now:
+===============
+
+Terminal 1:
+  docker-compose -f docker-compose-dev.yaml up -d
+
+Terminal 2:
+  cd src/frontend && npm start
+
+Done! Happy coding! 🚀

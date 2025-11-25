@@ -58,7 +58,7 @@ export default function CalendarPage() {
   const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const resp = await api.get('/api/enrollment/enrollments/');
+  const resp = await api.get('/enrollment/enrollments/');
       const enrollments = resp.data || [];
 
       const semesterStart = new Date('2025-01-05');

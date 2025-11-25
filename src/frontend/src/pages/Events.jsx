@@ -11,7 +11,7 @@ export default function Events() {
   useEffect(() => {
     (async () => {
       try {
-        const resp = await api.get('/api/core/events/');
+  const resp = await api.get('/core/events/');
         setEvents(resp.data);
       } catch (err) {
         console.error('Failed to load events', err);

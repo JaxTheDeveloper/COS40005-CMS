@@ -1,0 +1,215 @@
+Frontend-Only Development Setup
+================================
+
+YES, you're correct! 🎉
+
+Your architecture is:
+- Backend: Runs in Docker containers (separate process)
+- Frontend: React app you run locally with npm
+
+This is a great setup for development!
+
+---
+
+QUICKSTART - Get Running in 5 Minutes
+======================================
+
+Terminal 1 - Start Backend (one-time):
+  cd d:\Work\COS40005-CMS
+  docker-compose -f docker-compose-dev.yaml up -d
+  
+Terminal 2 - Start Frontend:
+  cd d:\Work\COS40005-CMS\src\frontend
+  npm install
+  npm start
+  
+Opens: http://localhost:3000
+
+---
+
+WHAT I'VE CREATED FOR YOU
+==========================
+
+✅ src/frontend/.env
+   - Already configured with backend API URL
+   - Contains: REACT_APP_API_URL=http://localhost:8000/api
+
+✅ FRONTEND_SETUP.md (Detailed Guide)
+   - Complete development guide
+   - Troubleshooting section
+   - Examples and tips
+
+✅ FRONTEND_CHEATSHEET.md (Quick Reference)
+   - All commands in one place
+   - Common issues & fixes
+   - Development workflow
+
+---
+
+YOUR SETUP
+==========
+
+Local Development (Your Machine):
+  React App
+  Port: 3000
+  Run: npm start
+  Location: src/frontend/
+
+Docker Backend (Separate Containers):
+  Django Backend
+  Port: 8000
+  Container: cos40005_backend
+  
+  PostgreSQL Database
+  Port: 5432
+  Container: cos40005_postgres
+  
+  Redis Cache
+  Port: 6379
+  Container: cos40005_redis
+
+Communication:
+  Frontend (3000) --HTTP--> Backend (8000)
+  CORS already configured ✅
+
+---
+
+DAILY WORKFLOW
+==============
+
+MORNING:
+  1. docker-compose -f docker-compose-dev.yaml up -d
+  2. cd src/frontend && npm start
+  3. Open http://localhost:3000
+
+DURING DAY:
+  - Edit React files in src/frontend/src/
+  - Browser auto-refreshes
+  - Check API responses in Network tab (F12)
+
+BEFORE LEAVING:
+  - Ctrl+C to stop frontend
+  - Optional: docker-compose down (or leave running)
+
+---
+
+KEY FILES
+=========
+
+Frontend files you'll edit:
+  src/frontend/src/App.js          - Main component
+  src/frontend/src/components/     - Your components
+  src/frontend/src/pages/          - Page components
+  src/frontend/styles.css          - Global styles
+  src/frontend/.env                - Configuration (already done ✅)
+
+Backend files (don't need to touch for frontend):
+  src/backend/...                  - Already running in Docker
+
+---
+
+API CONNECTION
+==============
+
+Backend is already set up for CORS ✅
+
+Your frontend can call backend:
+  
+  import axios from 'axios';
+  
+  const API_URL = process.env.REACT_APP_API_URL;
+  // This = 'http://localhost:8000/api'
+  
+  // Fetch data
+  axios.get(`${API_URL}/events/`)
+  
+  // Create data
+  axios.post(`${API_URL}/events/`, { title: 'New' })
+
+Available endpoints on backend:
+  GET    http://localhost:8000/api/events/
+  GET    http://localhost:8000/api/units/
+  GET    http://localhost:8000/api/users/
+  GET    http://localhost:8000/api/enrollments/
+  ... (and many more)
+
+---
+
+USEFUL COMMANDS
+===============
+
+Frontend:
+  npm install          - Install dependencies (first time)
+  npm start            - Start dev server (port 3000)
+  npm test             - Run tests
+  npm run build        - Build for production
+
+Backend (Docker):
+  docker-compose -f docker-compose-dev.yaml up -d      - Start
+  docker-compose -f docker-compose-dev.yaml down        - Stop
+  docker logs -f cos40005_backend                        - View logs
+  docker ps                                              - Check running
+
+Testing:
+  curl http://localhost:8000/api/               - Is backend working?
+  curl http://localhost:3000/                   - Is frontend working?
+
+---
+
+QUICK FIXES
+===========
+
+Backend not responding?
+  docker-compose -f docker-compose-dev.yaml restart backend
+
+Port already in use?
+  For frontend: PORT=3001 npm start
+  For backend: docker-compose down && docker-compose up -d
+
+npm install problems?
+  npm cache clean --force
+  rm -rf node_modules package-lock.json
+  npm install
+
+---
+
+YOU NOW HAVE
+============
+
+✅ Backend running in Docker
+✅ Frontend ready to run locally
+✅ API connection configured
+✅ CORS already enabled
+✅ Environment file (.env) created
+✅ Two detailed guides for reference
+
+---
+
+NEXT STEPS
+==========
+
+1. Open Terminal 1:
+   docker-compose -f docker-compose-dev.yaml up -d
+
+2. Open Terminal 2:
+   cd src/frontend
+   npm start
+
+3. Wait for browser to open to http://localhost:3000
+
+4. Start editing React files!
+
+---
+
+NEED HELP?
+==========
+
+Detailed guide: FRONTEND_SETUP.md
+Quick reference: FRONTEND_CHEATSHEET.md
+Full backend docs: POSTGRESQL_MIGRATION_GUIDE.md
+
+All in your project root directory.
+
+---
+
+You're all set to develop! 🚀

@@ -4,7 +4,7 @@ class AuthService {
     async login(email, password) {
         try {
             // Get JWT tokens
-            const response = await api.post("/api/token/", {
+            const response = await api.post("/token/", {
                 email,
                 password,
             });
@@ -14,7 +14,7 @@ class AuthService {
             localStorage.setItem("refreshToken", response.data.refresh);
 
             // Get user profile
-            const userResponse = await api.get("/api/users/users/me/");
+            const userResponse = await api.get("/users/users/me/");
             localStorage.setItem("user", JSON.stringify(userResponse.data));
 
             return userResponse.data;
@@ -34,7 +34,7 @@ class AuthService {
             const token = localStorage.getItem("token");
             if (!token) return null;
 
-            const response = await api.get("/api/users/users/me/");
+            const response = await api.get("/users/users/me/");
             localStorage.setItem("user", JSON.stringify(response.data));
             return response.data;
         } catch (error) {

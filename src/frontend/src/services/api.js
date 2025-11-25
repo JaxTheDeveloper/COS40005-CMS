@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -32,14 +32,14 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem("refreshToken");
             if (refreshToken) {
                 try {
-                    const response = await axios.post(
-                        `${API_URL}/api/token/refresh/`,
+                    const refreshResponse = await axios.post(
+                        `${API_URL}/token/refresh/`,
                         {
                             refresh: refreshToken,
                         }
                     );
-                    localStorage.setItem("token", response.data.access);
-                    error.config.headers.Authorization = `Bearer ${response.data.access}`;
+                    localStorage.setItem("token", refreshResponse.data.access);
+                    error.config.headers.Authorization = `Bearer ${refreshResponse.data.access}`;
                     return axios(error.config);
                 } catch (err) {
                     localStorage.removeItem("token");
@@ -56,7 +56,7 @@ api.interceptors.response.use(
 export const authService = {
     login: async (email, password) => {
         // Use compatibility endpoint which accepts email or username
-        const response = await api.post("/api/token/compat/", {
+        const response = await api.post("/token/compat/", {
             email,
             password,
         });
@@ -76,7 +76,7 @@ export const authService = {
     },
 
     getCurrentUser: async () => {
-        const response = await api.get("/users/me/");
+    const response = await api.get("/users/users/me/");
         return response.data;
     },
 

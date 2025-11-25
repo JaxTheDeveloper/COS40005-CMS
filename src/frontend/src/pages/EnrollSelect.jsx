@@ -27,8 +27,8 @@ export default function EnrollSelect() {
     const load = async () => {
       try {
         const [uResp, offResp] = await Promise.all([
-          api.get('/users/me/'),
-          api.get('/api/academic/offerings/?page_size=1000'),
+          api.get('/users/users/me/'),
+          api.get('/academic/offerings/?page_size=1000'),
         ]);
         setUser(uResp.data);
         const offs = offResp.data.results || offResp.data || [];
@@ -50,7 +50,7 @@ export default function EnrollSelect() {
   const doEnroll = async (offeringId) => {
     setActionMessage(null);
     try {
-      await api.post('/api/enrollment/enrollments/', { offering: offeringId });
+  await api.post('/enrollment/enrollments/', { offering: offeringId });
       setActionMessage({ type: 'success', text: 'Enrollment request submitted.' });
       setConfirmOffering(null);
       // navigate to calendar to show results

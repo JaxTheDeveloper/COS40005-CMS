@@ -28,8 +28,8 @@ export default function SocialGold() {
   const loadSocialGoldData = async () => {
     try {
       const [goldResponse, transactionsResponse] = await Promise.all([
-        api.get('/api/social/social-gold/'),
-        api.get('/api/social/transactions/')
+  api.get('/social/social-gold/'),
+  api.get('/social/transactions/')
       ]);
       
       setSocialGold(goldResponse.data[0]); // Assuming user has one social gold record

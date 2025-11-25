@@ -21,7 +21,7 @@ export default function MyEnrollments() {
 
   const loadEnrollments = async () => {
     try {
-      const response = await api.get('/api/enrollment/enrollments/');
+  const response = await api.get('/enrollment/enrollments/');
       // Backend may return either an array or a paginated object { results: [...] }
       let data = response.data;
       if (data && typeof data === 'object' && !Array.isArray(data)) {
@@ -52,7 +52,7 @@ export default function MyEnrollments() {
 
   const handleWithdraw = async (enrollmentId) => {
     try {
-  await api.post(`/api/enrollment/enrollments/${enrollmentId}/withdraw/`);
+  await api.post(`/enrollment/enrollments/${enrollmentId}/withdraw/`);
       loadEnrollments(); // Reload after withdrawal
     } catch (err) {
       setError('Failed to withdraw from unit');
