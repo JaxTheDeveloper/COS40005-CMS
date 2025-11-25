@@ -54,17 +54,19 @@ body{
 }
 .askai-input::placeholder{color:#e5e7eb}
 .askai-send{
-  width:44px;border:none;background:#6b7280;color:#fff;border-radius:0 6px 0 0;font-size:16px
+  width:44px;border:none;background:#6b7280;color:#fff;border-radius:0 6px 0 0;font-size:16px;cursor:pointer;transition:background-color .15s ease, transform .1s ease
 }
+.askai-send:disabled{opacity:.5;cursor:not-allowed}
+.askai-send:not(:disabled):hover{background:#4b5563;transform:translateX(1px)}
 .askai-suggest-title{padding:10px 14px;color:#4b5563;background:#e5e7eb;border-top:1px solid #d1d5db}
-.askai-suggest-list{list-style:none;margin:0;padding:0 14px 10px 14px;display:flex;flex-direction:column;gap:6px}
-.askai-suggest-item{color:#6b7280;font-size:.92rem}
+.askai-suggest-list{list-style:none;margin:0;padding:0 0px 0px 0px;display:flex;flex-direction:column;gap:6px}
+.askai-suggest-item{color:#6b7280;font-size:.92rem;cursor:pointer;padding:6px 8px;border-radius:0 0 6px 0;user-select:none}
+.askai-suggest-item:hover{background:#e5e7eb;color:#374151}
 
 /* Queries page */
 .rules{
   background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px
 }
-.rules ul{margin:0;padding-left:18px}
 .query-form{
   background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px
 }
