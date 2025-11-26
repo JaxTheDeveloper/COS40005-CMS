@@ -1,0 +1,603 @@
+@startuml
+' Entity-Relationship Diagram (ERD) for SwinCMS
+' All 49 tables with primary keys, foreign keys, and relationships
+
+!define PK_COLOR #FFCCCC
+!define FK_COLOR #CCFFCC
+!define ATTR_COLOR #FFFFCC
+
+skinparam backgroundColor #FEFEFE
+skinparam linetype ortho
+skinparam classBackgroundColor #F0F0F0
+skinparam classBorderColor #333333
+
+' ===== ACADEMIC MODULE =====
+
+entity "academic_course" {
+  * **id** : bigint <<PK>>
+  --
+  code : varchar(20) <<UK>>
+  name : varchar(200)
+  description : text
+  duration_years : numeric(3,1)
+  credit_points : integer
+  department : varchar(100)
+  is_active : boolean
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "academic_unit" {
+  * **id** : bigint <<PK>>
+  --
+  code : varchar(20) <<UK>>
+  name : varchar(200)
+  description : text
+  credit_points : integer
+  department : varchar(100)
+  is_active : boolean
+  convenor_id : bigint <<FK>>
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "academic_semesteroffering" {
+  * **id** : bigint <<PK>>
+  --
+  year : integer
+  semester : varchar(2)
+  unit_id : bigint <<FK>>
+  enrollment_start : timestamp
+  enrollment_end : timestamp
+  capacity : integer
+  current_enrollment : integer
+  is_active : boolean
+  notes : text
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "academic_unitresource" {
+  * **id** : bigint <<PK>>
+  --
+  title : varchar(200)
+  resource_type : varchar(20)
+  description : text
+  file : varchar(100)
+  url : varchar(200)
+  is_required : boolean
+  unit_id : bigint <<FK>>
+  created_by_id : bigint <<FK>>
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "academic_unit_prerequisites" {
+  * **id** : bigint <<PK>>
+  --
+  from_unit_id : bigint <<FK>>
+  to_unit_id : bigint <<FK>>
+}
+
+entity "academic_unit_anti_requisites" {
+  * **id** : bigint <<PK>>
+  --
+  from_unit_id : bigint <<FK>>
+  to_unit_id : bigint <<FK>>
+}
+
+' ===== USERS / AUTH MODULE =====
+
+entity "users_user" {
+  * **id** : bigint <<PK>>
+  --
+  email : varchar(254) <<UK>>
+  username : varchar(150)
+  password : varchar(128)
+  first_name : varchar(150)
+  last_name : varchar(150)
+  is_active : boolean
+  is_staff : boolean
+  is_superuser : boolean
+  date_joined : timestamp
+  last_login : timestamp
+  user_type : varchar(20)
+}
+
+entity "users_role" {
+  * **id** : bigint <<PK>>
+  --
+  name : varchar(100)
+  description : text
+}
+
+entity "users_userrole" {
+  * **id** : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  role_id : bigint <<FK>>
+}
+
+entity "users_user_groups" {
+  * **id** : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  group_id : integer <<FK>>
+}
+
+entity "users_user_user_permissions" {
+  * **id** : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  permission_id : integer <<FK>>
+}
+
+entity "users_studentprofile" {
+  * **id** : bigint <<PK>>
+  --
+  user_id : bigint <<FK>> <<UK>>
+  student_id : varchar(50) <<UK>>
+  date_of_birth : date
+  gender : varchar(10)
+  address : text
+  phone : varchar(20)
+  enrollment_status : varchar(20)
+}
+
+entity "users_parentguardian" {
+  * **id** : bigint <<PK>>
+  --
+  name : varchar(200)
+  email : varchar(254)
+  phone : varchar(20)
+  relationship : varchar(50)
+}
+
+entity "users_parentguardian_students" {
+  * **id** : bigint <<PK>>
+  --
+  parentguardian_id : bigint <<FK>>
+  user_id : bigint <<FK>>
+}
+
+entity "users_scholarship" {
+  * **id** : bigint <<PK>>
+  --
+  name : varchar(200)
+  description : text
+  amount : numeric(10,2)
+  available_slots : integer
+  is_active : boolean
+}
+
+entity "users_scholarshipapplication" {
+  * **id** : bigint <<PK>>
+  --
+  student_id : bigint <<FK>>
+  scholarship_id : bigint <<FK>>
+  application_date : timestamp
+  status : varchar(20)
+}
+
+entity "users_unit" {
+  * **id** : bigint <<PK>>
+  --
+  code : varchar(20) <<UK>>
+  name : varchar(200)
+  description : text
+  credit_points : integer
+  department : varchar(100)
+  is_active : boolean
+  convenor_id : bigint <<FK>>
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "users_unit_prerequisites" {
+  * **id** : bigint <<PK>>
+  --
+  from_unit_id : bigint <<FK>>
+  to_unit_id : bigint <<FK>>
+}
+
+entity "users_enrollment" {
+  * **id** : bigint <<PK>>
+  --
+  student_id : bigint <<FK>>
+  unit_id : bigint <<FK>>
+  semester_offering_id : bigint <<FK>>
+  status : varchar(20)
+  grade : varchar(2)
+  marks : numeric(5,2)
+}
+
+entity "users_course" {
+  * **id** : bigint <<PK>>
+  --
+  code : varchar(20) <<UK>>
+  name : varchar(200)
+  description : text
+  duration_years : numeric(3,1)
+  credit_points : integer
+}
+
+entity "users_auditlog" {
+  * **id** : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  action : varchar(100)
+  details : text
+  timestamp : timestamp
+}
+
+entity "users_n8nworkflow" {
+  * **id** : bigint <<PK>>
+  --
+  name : varchar(200)
+  description : text
+  webhook_url : varchar(500)
+  is_active : boolean
+  trigger_event : varchar(50)
+  created_at : timestamp
+}
+
+entity "users_n8nexecutionlog" {
+  * **id** : bigint <<PK>>
+  --
+  workflow_id : bigint <<FK>>
+  triggered_by_id : bigint <<FK>>
+  status : varchar(20)
+  input_data : jsonb
+  output_data : jsonb
+  error_details : jsonb
+  start_time : timestamp
+  end_time : timestamp
+}
+
+' ===== ENROLLMENT MODULE =====
+
+entity "enrollment_enrollment" {
+  * **id** : bigint <<PK>>
+  --
+  student_id : bigint <<FK>>
+  offering_id : bigint <<FK>>
+  status : varchar(20)
+  grade : varchar(2)
+  marks : numeric(5,2)
+  withdrawn_date : timestamp
+  completion_date : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "enrollment_enrollmentapproval" {
+  * **id** : bigint <<PK>>
+  --
+  enrollment_id : bigint <<FK>>
+  approved_by_id : bigint <<FK>>
+  approved_at : timestamp
+  notes : text
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "enrollment_transcript" {
+  * **id** : bigint <<PK>>
+  --
+  enrollment_id : bigint <<FK>>
+  unit_code : varchar(20)
+  grade : varchar(2)
+  credit_points : integer
+  transcript_date : timestamp
+}
+
+' ===== CORE MODULE =====
+
+entity "core_event" {
+  * **id** : bigint <<PK>>
+  --
+  title : varchar(255)
+  description : text
+  start : timestamp
+  end : timestamp
+  location : varchar(255)
+  visibility : varchar(20)
+  created_by_id : bigint <<FK>>
+  related_offering_id : bigint <<FK>>
+  related_unit_id : bigint <<FK>>
+  generated_content : jsonb
+  generation_meta : jsonb
+  generation_status : varchar(20)
+  last_generated_at : timestamp
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "core_event_attendees" {
+  * **id** : bigint <<PK>>
+  --
+  event_id : bigint <<FK>>
+  user_id : bigint <<FK>>
+}
+
+entity "core_session" {
+  * **id** : bigint <<PK>>
+  --
+  unit_id : bigint <<FK>>
+  offering_id : bigint <<FK>>
+  instructor_id : bigint <<FK>>
+  session_type : varchar(20)
+  date : date
+  start_time : time
+  end_time : time
+  location : varchar(255)
+}
+
+entity "core_attendancerecord" {
+  * **id** : bigint <<PK>>
+  --
+  session_id : bigint <<FK>>
+  student_id : bigint <<FK>>
+  marked_by_id : bigint <<FK>>
+  status : varchar(20)
+  notes : text
+  created_at : timestamp
+}
+
+entity "core_notification" {
+  * **id** : bigint <<PK>>
+  --
+  actor_id : bigint <<FK>>
+  recipient_id : bigint <<FK>>
+  target_content_type_id : integer <<FK>>
+  target_object_id : integer
+  verb : varchar(200)
+  unread : boolean
+  created_at : timestamp
+}
+
+entity "core_mediaasset" {
+  * **id** : bigint <<PK>>
+  --
+  uploaded_by_id : bigint <<FK>>
+  file : varchar(100)
+  created_at : timestamp
+}
+
+entity "core_form" {
+  * **id** : bigint <<PK>>
+  --
+  created_by_id : bigint <<FK>>
+  name : varchar(200)
+  slug : varchar(200) <<UK>>
+  description : text
+  schema : jsonb
+  is_active : boolean
+  created_at : timestamp
+}
+
+entity "core_formsubmission" {
+  * **id** : bigint <<PK>>
+  --
+  form_id : bigint <<FK>>
+  submitter_id : bigint <<FK>>
+  data : jsonb
+  submitted_at : timestamp
+}
+
+entity "core_ticket" {
+  * **id** : bigint <<PK>>
+  --
+  submitter_id : bigint <<FK>>
+  assigned_to_id : bigint <<FK>>
+  related_unit_id : bigint <<FK>>
+  related_offering_id : bigint <<FK>>
+  title : varchar(255)
+  description : text
+  status : varchar(20)
+  priority : varchar(10)
+  category : varchar(100)
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "core_ticketcomment" {
+  * **id** : bigint <<PK>>
+  --
+  ticket_id : bigint <<FK>>
+  commenter_id : bigint <<FK>>
+  comment : text
+  created_at : timestamp
+}
+
+entity "core_page" {
+  * **id** : bigint <<PK>>
+  --
+  created_by_id : bigint <<FK>>
+  unit_id : bigint <<FK>>
+  title : varchar(255)
+  slug : varchar(255) <<UK>>
+  content : text
+  published : boolean
+  created_at : timestamp
+}
+
+entity "core_resource" {
+  * **id** : bigint <<PK>>
+  --
+  unit_id : bigint <<FK>>
+  uploaded_by_id : bigint <<FK>>
+  title : varchar(255)
+  file : varchar(100)
+  created_at : timestamp
+}
+
+' ===== SOCIAL MODULE =====
+
+entity "social_achievement" {
+  * **id** : bigint <<PK>>
+  --
+  name : varchar(200)
+  description : text
+  badge_icon : varchar(100)
+  points : integer
+}
+
+entity "social_studentachievement" {
+  * **id** : bigint <<PK>>
+  --
+  student_id : bigint <<FK>>
+  achievement_id : bigint <<FK>>
+  earned_date : timestamp
+}
+
+entity "social_socialgold" {
+  * **id** : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  total_points : integer
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity "social_socialgoldtransaction" {
+  * **id** : bigint <<PK>>
+  --
+  gold_id : bigint <<FK>>
+  amount : integer
+  transaction_type : varchar(20)
+  description : text
+  created_at : timestamp
+}
+
+' ===== DJANGO AUTH MODULE =====
+
+entity "auth_user" {
+  * **id** : integer <<PK>>
+  --
+  username : varchar(150) <<UK>>
+  email : varchar(254)
+  password : varchar(128)
+}
+
+entity "auth_group" {
+  * **id** : integer <<PK>>
+  --
+  name : varchar(150) <<UK>>
+}
+
+entity "auth_permission" {
+  * **id** : integer <<PK>>
+  --
+  content_type_id : integer <<FK>>
+  codename : varchar(100)
+  name : varchar(255)
+}
+
+entity "auth_group_permissions" {
+  * **id** : bigint <<PK>>
+  --
+  group_id : integer <<FK>>
+  permission_id : integer <<FK>>
+}
+
+entity "django_content_type" {
+  * **id** : integer <<PK>>
+  --
+  app_label : varchar(100)
+  model : varchar(100)
+}
+
+entity "django_admin_log" {
+  * **id** : integer <<PK>>
+  --
+  user_id : bigint <<FK>>
+  content_type_id : integer <<FK>>
+  object_id : text
+  object_repr : varchar(200)
+  action_flag : smallint
+  action_time : timestamp
+  change_message : text
+}
+
+entity "django_session" {
+  * **session_key** : varchar(40) <<PK>>
+  --
+  session_data : text
+  expire_date : timestamp
+}
+
+entity "django_migrations" {
+  * **id** : bigint <<PK>>
+  --
+  app : varchar(255)
+  name : varchar(255)
+  applied : timestamp
+}
+
+' ===== RELATIONSHIPS =====
+
+' Academic relationships
+academic_unit ||--o{ academic_semesteroffering : "has"
+academic_unit ||--o{ academic_unitresource : "has"
+academic_unit ||--o{ academic_unit_prerequisites : "from"
+academic_unit ||--o{ academic_unit_anti_requisites : "from"
+academic_unit }o--|| users_user : "convenor"
+
+' Enrollment relationships
+enrollment_enrollment }o--|| academic_semesteroffering : "offering"
+enrollment_enrollment }o--|| users_user : "student"
+enrollment_enrollmentapproval }o--|| enrollment_enrollment : "enrollment"
+enrollment_enrollmentapproval }o--|| users_user : "approved_by"
+enrollment_transcript }o--|| enrollment_enrollment : "enrollment"
+
+' User relationships
+users_user ||--o{ users_userrole : "has"
+users_userrole }o--|| users_role : "role"
+users_user ||--o{ users_auditlog : "has"
+users_user ||--o{ users_studentprofile : "is"
+users_user ||--o{ users_parentguardian_students : "student"
+users_parentguardian ||--o{ users_parentguardian_students : "guardian"
+users_user ||--o{ users_scholarshipapplication : "applies"
+users_scholarship ||--o{ users_scholarshipapplication : "has"
+users_user ||--o{ users_n8nexecutionlog : "triggers"
+users_n8nworkflow ||--o{ users_n8nexecutionlog : "executes"
+
+' Core relationships
+core_event }o--|| users_user : "created_by"
+core_event ||--o{ core_event_attendees : "has"
+core_event_attendees }o--|| users_user : "attendee"
+core_session }o--|| users_user : "instructor"
+core_session }o--|| academic_semesteroffering : "offering"
+core_attendancerecord }o--|| core_session : "session"
+core_attendancerecord }o--|| users_user : "student"
+core_attendancerecord }o--|| users_user : "marked_by"
+core_notification }o--|| users_user : "actor"
+core_notification }o--|| users_user : "recipient"
+core_mediaasset }o--|| users_user : "uploaded_by"
+core_form }o--|| users_user : "created_by"
+core_formsubmission }o--|| core_form : "form"
+core_formsubmission }o--|| users_user : "submitter"
+core_ticket }o--|| users_user : "submitter"
+core_ticket }o--|| users_user : "assigned_to"
+core_ticketcomment }o--|| core_ticket : "ticket"
+core_ticketcomment }o--|| users_user : "commenter"
+core_page }o--|| users_user : "created_by"
+core_resource }o--|| users_user : "uploaded_by"
+
+' Social relationships
+social_achievement ||--o{ social_studentachievement : "earned"
+social_studentachievement }o--|| users_user : "student"
+social_socialgold }o--|| users_user : "user"
+social_socialgold ||--o{ social_socialgoldtransaction : "has"
+
+' Django auth relationships
+auth_permission }o--|| django_content_type : "content_type"
+auth_group ||--o{ auth_group_permissions : "has"
+auth_group_permissions }o--|| auth_permission : "permission"
+users_user_groups }o--|| auth_group : "group"
+users_user_user_permissions }o--|| auth_permission : "permission"
+django_admin_log }o--|| users_user : "user"
+django_admin_log }o--|| django_content_type : "content_type"
+
+@enduml

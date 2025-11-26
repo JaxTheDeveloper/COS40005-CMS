@@ -1,0 +1,70 @@
+@startuml
+' User roles capabilities diagram for COS40005-CMS
+skinparam componentStyle rectangle
+left to right direction
+
+actor Student as S
+actor Convenor as C
+actor Staff as A
+
+package "Frontend (React)" {
+  component "Student UI" as UI_Student
+  component "Staff/Convenor UI" as UI_Staff
+}
+
+package "Backend (Django)" {
+  component "Events API" as API_Events
+  component "Notifications API" as API_Notifications
+  component "Import/Webhook" as API_Importer
+  component "Media API" as API_Media
+  component "Admin / Management" as API_Admin
+}
+
+' Capabilities
+S --> UI_Student : login, view calendar
+S --> UI_Student : view notifications, mark read
+UI_Student --> API_Events : GET /events (filter by visibility)
+UI_Student --> API_Notifications : GET/PATCH /notifications
+UI_Student --> API_Media : GET media URLs
+
+C --> UI_Staff : login, upload CSV, manage unit events
+A --> UI_Staff : login, upload CSV, manage org events, admin actions
+
+UI_Staff --> API_Importer : POST /events/import-csv/ (form-data 'data')
+UI_Staff --> API_Events : GET/POST/PUT /events/ /events/{id}/refine_content/
+UI_Staff --> API_Events : GET /events/pending-refinement/
+UI_Staff --> API_Events : POST /events/bulk-publish/
+UI_Staff --> API_Media : POST /core/media/ (upload images)
+UI_Staff --> API_Admin : admin actions (user, unit management)
+
+' Permissions note
+note left of API_Importer
+  - `import-csv` is staff-only (IsStaff)
+  - forwards raw CSV to configured N8N_IMPORT_WEBHOOK
+  - dev fallback returns parsed rows
+end note
+
+note right of API_Events
+  - `generate_content` triggers external workflow (n8n) or mock
+  - `generation_callback` saves generated_content from workflows
+  - `refine_content` allows staff to edit article before publishing
+end note
+
+' Summary table
+note bottom
+  Student:
+    - View events, notifications, calendar
+    - No CSV/import or refine
+
+  Convenor (unit):
+    - Upload CSV for their unit
+    - Review & refine generated content
+    - Publish events scoped to their unit
+
+  HQ Staff:
+    - Upload CSV organization-wide
+    - Review & refine all generated content
+    - Bulk publish events, admin user/unit management
+end note
+
+@enduml

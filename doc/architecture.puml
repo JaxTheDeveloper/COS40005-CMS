@@ -1,0 +1,108 @@
+@startuml
+' COS40005-CMS overall architecture - Component Diagram (PlantUML)
+
+!define ICONURL https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.1
+skinparam componentStyle rectangle
+
+package "Client" {
+  component "React Frontend" as FE
+}
+
+package "Infrastructure (Docker)" {
+  node "Host / Docker Engine" {
+    [cos40005_frontend] as FE_container
+    [cos40005_backend] as BE_container
+    [cos40005_postgres] as PG_container
+    [cos40005_redis] as REDIS_container
+    [cos40005_pgadmin] as PGADMIN_container
+  }
+}
+
+package "Backend Services" {
+  component "Django (REST API)" as Django
+  component "DRF + SimpleJWT" as Auth
+  component "CSV Import / N8N Forwarder" as Importer
+  component "Media / MediaAsset" as Media
+}
+
+package "External" {
+  node "n8n Webhook" as N8N
+}
+
+' relationships
+FE --> Django : API (JSON / JWT)
+FE --> FE_container : served static bundle (dev hot-reload or build)
+FE_container -down-> BE_container : proxy (dev / compose)
+Django --> PG_container : SQL (Postgres)
+Django --> REDIS_container : Cache / job broker
+Django --> N8N : POST multipart CSV / webhooks
+Django --> Media : stores uploaded files on MEDIA_ROOT (mounted volume)
+
+' Components mapping
+BE_container --> Django
+Django --> Auth
+Django --> Importer
+Django --> Media
+
+' Deployment notes
+note right of PG_container
+  Postgres container
+  - stores core data: users, events, enrollments
+  - migrations managed with manage.py
+end note
+
+note right of REDIS_container
+  Redis used for caching and background queues (optional)
+end note
+
+note left of N8N
+  External workflow engine
+  - receives CSV (multipart)
+  - parses rows and creates events/notifications
+end note
+
+' High level data flows
+FE --> Django : 1. Authenticate (obtain JWT)
+FE --> Django : 2. Use JWT to call API endpoints (events, enrollments, media)
+FE --> Media : 3. Upload images (multipart)
+Django --> N8N : 4. Forward uploaded CSV to N8N for parsing
+N8N --> Django : 5. Optionally callback with generated content (webhook)
+Django --> PG_container : Persist created/updated event records
+
+' --- Backend details (expanded) ---
+package "Backend (Django) - expanded" {
+  component "API Gateway / DRF views" as API
+  component "Authentication (SimpleJWT)" as Auth2
+  component "Events service (models, serializers, views)" as Events2
+  component "CSV Import / N8N forwarder" as Importer2
+  component "Media storage (MEDIA_ROOT + upload handlers)" as Media2
+  component "Background workers (optional: Celery/RQ)" as Workers2
+  component "Admin & Management commands" as Admin2
+}
+
+' Flows for expanded backend
+FE --> API : "HTTPS JSON API (JWT)"
+API --> Auth2 : "Validate / issue / refresh tokens"
+API --> Events2 : "Events CRUD, generation, query"
+API --> Importer2 : "POST /api/events/import-csv/ (form-data 'data')"
+Importer2 --> N8N : "POST multipart CSV -> n8n webhook"
+Importer2 --> Workers2 : "Enqueue background job (optional)"
+API --> Media2 : "Store files to MEDIA_ROOT (mounted volume or S3)"
+Workers2 --> API : "Write back generated events / update status"
+
+note right of Importer2
+  CSV Importer behavior (expanded):
+  - Accepts form-data key 'data' (raw CSV)
+  - Light validation locally; forwards original multipart to N8N
+  - Uses `requests` when available; falls back to stdlib builder
+  - Dev fallback returns parsed rows when webhook unset
+end note
+
+note left of Events2
+  Events service responsibilities (expanded):
+  - Event model, serializers for generated_content
+  - Staff ViewSet includes import-csv action
+  - Admin & management commands for seeding
+end note
+
+@enduml

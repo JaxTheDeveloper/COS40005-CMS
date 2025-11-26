@@ -320,6 +320,142 @@ class EventViewSet(viewsets.ModelViewSet):
 
         return Response(serializers.EventSerializer(event).data)
 
+    @action(detail=False, methods=['post'], permission_classes=[IsStaff], url_path='batch-create-webhook')
+    def batch_create_from_webhook(self, request):
+        """
+        Webhook endpoint for n8n to POST back a batch of generated events.
+        Expected payload: {
+          'events': [
+            {
+              'title': '...',
+              'description': '...',
+              'start': '2025-...',
+              'end': '2025-...',
+              'location': '...',
+              'visibility': 'public|unit|staff',
+              'generated_content': {...},
+              'generation_meta': {...},
+              'related_unit_id': <id or null>,
+              'related_offering_id': <id or null>
+            },
+            ...
+          ]
+        }
+        """
+        events_data = request.data.get('events', [])
+        if not events_data:
+            return Response({'error': 'No events provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        created_events = []
+        errors = []
+
+        for event_data in events_data:
+            try:
+                # Set creator and timestamps
+                event_data['created_by'] = request.user.id
+                
+                # Create event using serializer
+                serializer = serializers.EventSerializer(data=event_data)
+                if serializer.is_valid():
+                    event = serializer.save(created_by=request.user)
+                    created_events.append(serializer.data)
+                else:
+                    errors.append({'data': event_data, 'errors': serializer.errors})
+            except Exception as exc:
+                errors.append({'data': event_data, 'error': str(exc)})
+
+        return Response({
+            'created_count': len(created_events),
+            'error_count': len(errors),
+            'created_events': created_events,
+            'errors': errors if errors else None
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsStaff], url_path='pending-refinement')
+    def list_pending_refinement(self, request):
+        """
+        Staff-only: list all events with generation_status in ['pending', 'idle'] 
+        that need refinement before publishing.
+        """
+        pending_statuses = request.query_params.getlist('status', ['pending', 'idle'])
+        events = self.get_queryset().filter(generation_status__in=pending_statuses).order_by('-created_at')
+        
+        # Optional filtering by related unit
+        unit_id = request.query_params.get('unit_id')
+        if unit_id:
+            events = events.filter(related_unit_id=unit_id)
+        
+        # Optional: only events created recently (e.g., last 7 days)
+        days = request.query_params.get('days')
+        if days:
+            from datetime import timedelta
+            cutoff = timezone.now() - timedelta(days=int(days))
+            events = events.filter(created_at__gte=cutoff)
+
+        page = self.paginate_queryset(events)
+        if page is not None:
+            serializer = serializers.EventSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = serializers.EventSerializer(events, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsStaff], url_path='bulk-publish')
+    def bulk_publish(self, request):
+        """
+        Staff-only: publish (set visibility & generation_status) for multiple events at once.
+        Expected payload: {
+          'event_ids': [1, 2, 3, ...],
+          'visibility': 'public|unit|staff',
+          'generation_status': 'ready'
+        }
+        """
+        event_ids = request.data.get('event_ids', [])
+        visibility = request.data.get('visibility', 'public')
+        gen_status = request.data.get('generation_status', 'ready')
+
+        if not event_ids:
+            return Response({'error': 'No event IDs provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if visibility not in ['public', 'unit', 'staff']:
+            return Response({'error': 'Invalid visibility value'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if gen_status not in ['idle', 'pending', 'ready', 'failed']:
+            return Response({'error': 'Invalid generation_status value'}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated = models.Event.objects.filter(id__in=event_ids).update(
+            visibility=visibility,
+            generation_status=gen_status,
+            updated_at=timezone.now()
+        )
+
+        return Response({
+            'message': f'Updated {updated} events',
+            'updated_count': updated,
+            'visibility': visibility,
+            'generation_status': gen_status
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsStaff])
+    def get_generation_status(self, request, pk=None):
+        """
+        Get detailed generation and publication status for a single event.
+        Includes: generation_status, generated_content (preview), visibility, created_at, updated_at.
+        """
+        event = self.get_object()
+        return Response({
+            'id': event.id,
+            'title': event.title,
+            'generation_status': event.generation_status,
+            'visibility': event.visibility,
+            'generated_content': event.generated_content,
+            'generation_meta': event.generation_meta,
+            'created_at': event.created_at,
+            'updated_at': event.updated_at,
+            'last_generated_at': event.last_generated_at,
+            'created_by': event.created_by.email if event.created_by else None,
+        })
+
 
 class SessionViewSet(viewsets.ModelViewSet):
     queryset = models.Session.objects.all().order_by('date')
