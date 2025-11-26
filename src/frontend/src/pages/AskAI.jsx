@@ -12,6 +12,11 @@ const SUGGESTIONS = [
 
 export default function AskAI() {
   const [query, setQuery] = useState("");
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    console.log("AskAI prompt:", query);
+  };
   return (
     <section className="askai-wrapper">
       <h2 className="askai-title">Ask AI</h2>
@@ -23,13 +28,25 @@ export default function AskAI() {
             placeholder="Enter text here"
             className="askai-input"
           />
-          <button className="askai-send" aria-label="Send">➤</button>
+          <button
+            className="askai-send"
+            aria-label="Send"
+            onClick={handleSend}
+            disabled={!query.trim()}
+            title={!query.trim() ? "Enter a prompt" : "Send"}
+          >
+            ➤
+          </button>
         </div>
 
         <div className="askai-suggest-title">Suggestion</div>
         <ul className="askai-suggest-list">
           {SUGGESTIONS.map((s, idx) => (
-            <li key={idx} className="askai-suggest-item">
+            <li
+              key={idx}
+              className="askai-suggest-item"
+              onClick={() => setQuery(s)}
+            >
               {s}
             </li>
           ))}
