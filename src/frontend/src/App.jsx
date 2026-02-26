@@ -1,3 +1,5 @@
+
+
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import PublicNavbar from "./components/PublicNavbar.jsx";
@@ -20,10 +22,10 @@ import "./App.css";
 import { authService } from "./services/auth";
 
 export default function App() {
-  // Simulate auth state (replace with real context/hook later)
   const [user, setUser] = React.useState(null);
+
+  // Check auth state on mount
   React.useEffect(() => {
-    // Check current authenticated user via authService
     async function check() {
       try {
         const u = await authService.getCurrentUser();
@@ -35,17 +37,28 @@ export default function App() {
     check();
   }, []);
 
+  // Called by Login page after successful authentication
+  const handleLogin = (loggedInUser) => {
+    setUser(loggedInUser);
+  };
+
+  // Called by Sidebar / PublicNavbar on logout
+  const handleLogout = () => {
+    authService.logout();
+    setUser(null);
+  };
+
   return (
     <div className={`app-layout ${user ? "logged-in" : ""}`}>
-      <PublicNavbar />
-      {user && <Sidebar />}
+      <PublicNavbar user={user} onLogout={handleLogout} />
+      {user && <Sidebar user={user} onLogout={handleLogout} />}
       <main className={!user ? "main-public" : "main-private"}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard/compsci" />} />
           <Route path="/dashboard/compsci" element={<CSDashboard />} />
           <Route path="/queries" element={<Queries />} />
           <Route path="/ask-ai" element={<AskAI />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login onLogin={handleLogin} />} />
           <Route path="/enrollments" element={<MyEnrollments />} />
           <Route path="/social-gold" element={<SocialGold />} />
           <Route path="/profile" element={<Profile />} />
@@ -60,6 +73,7 @@ export default function App() {
       <footer className="footer">
         © {new Date().getFullYear()} Swinburne VN (demo)
       </footer>
+      
     </div>
   );
 }

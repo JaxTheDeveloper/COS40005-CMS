@@ -1,8 +1,16 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function PublicNavbar() {
+export default function PublicNavbar({ user, onLogout }) {
+  const navigate = useNavigate();
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    if (onLogout) onLogout();
+    navigate("/login");
+  };
+
   return (
     <nav className="public-navbar">
       <Link to="/">Home</Link>
@@ -10,7 +18,11 @@ export default function PublicNavbar() {
       <Link to="/social-gold">Social Gold</Link>
       <Link to="/ask-ai">Ask AI</Link>
       <Link to="/queries">Queries</Link>
-      <Link to="/login">Login</Link>
+      {user ? (
+        <a href="#logout" onClick={handleLogout}>Logout</a>
+      ) : (
+        <Link to="/login">Login</Link>
+      )}
       <Link to="/about">About</Link>
     </nav>
   );

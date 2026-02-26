@@ -17,7 +17,7 @@ const validationSchema = Yup.object({
     .required('Password is required'),
 });
 
-export default function Login() {
+export default function Login({ onLogin }) {
   const navigate = useNavigate();
 
   const formik = useFormik({
@@ -28,7 +28,9 @@ export default function Login() {
     validationSchema: validationSchema,
     onSubmit: async (values, { setSubmitting, setErrors }) => {
       try {
-        await authService.login(values.email, values.password);
+        const user = await authService.login(values.email, values.password);
+        // Notify App.jsx that we have a logged-in user
+        if (onLogin) onLogin(user);
         navigate('/dashboard/compsci');
       } catch (error) {
         setErrors({
