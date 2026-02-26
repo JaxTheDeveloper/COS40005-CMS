@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
 import { api, authService } from '../services/api';
+import EventRefinementChatbot from '../components/EventRefinementChatbot';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -48,6 +49,8 @@ export default function StaffEventManager() {
   });
   const [currentUser, setCurrentUser] = useState(null);
   const [noAccess, setNoAccess] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
+  const [chatbotEventId, setChatbotEventId] = useState(null);
 
   useEffect(() => {
     checkAccess();
@@ -297,6 +300,17 @@ export default function StaffEventManager() {
                       <Button
                         size="small"
                         variant="outlined"
+                        onClick={() => {
+                          setChatbotEventId(event.id);
+                          setChatbotOpen(true);
+                        }}
+                        sx={{ mr: 1 }}
+                      >
+                        Refine
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
                         onClick={() => handleGenerateContent(event.id)}
                       >
                         Generate
@@ -421,6 +435,31 @@ export default function StaffEventManager() {
           <Button onClick={handleSaveEvent} variant="contained" disabled={loading}>
             {loading ? 'Saving...' : 'Save'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={chatbotOpen}
+        onClose={() => setChatbotOpen(false)}
+        maxWidth="lg"
+        fullWidth
+      >
+        <DialogTitle>Refine Event Content</DialogTitle>
+        <DialogContent sx={{ minHeight: 600 }}>
+          {chatbotEventId && (
+            <EventRefinementChatbot
+              eventId={chatbotEventId}
+              onClose={() => setChatbotOpen(false)}
+              onPublish={() => {
+                setChatbotOpen(false);
+                loadEvents();
+                setSuccessMessage('Event published successfully');
+              }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setChatbotOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

@@ -1,0 +1,116 @@
+@startuml Sprint4_DataFlowDiagram
+!define PROCESS_COLOR #E1F5FF
+!define DATA_COLOR #FFF3E0
+!define EXTERNAL_COLOR #FFCCBC
+!define ACTOR_COLOR #E8F5E9
+
+title Data Flow Diagram - Event Refinement System
+
+actor "Staff User" as staff #E8F5E9
+
+' Input sources
+rectangle "Input Sources" {
+    entity "CSV File\n(events.csv)" as csv_source #FFF3E0
+    entity "Refinement Prompt\n(user input)" as prompt_source #FFF3E0
+    entity "Direct Edit\n(typed content)" as direct_source #FFF3E0
+}
+
+' Data Processing
+rectangle "Data Processing & Validation" {
+    process "1. Parse CSV\nextractFromFile" as p1 #E1F5FF
+    process "2. Validate\nRows & Columns" as p2 #E1F5FF
+    process "3. Transform to\nEvent Model" as p3 #E1F5FF
+    process "4. Route Refinement\nType (prompt|direct)" as p4 #E1F5FF
+    process "5. Validate JWT\nToken" as p5 #E1F5FF
+}
+
+' LLM Processing
+rectangle "LLM Processing (Conditional)" {
+    process "6. Call Groq API\n(if prompt mode)" as p6 #FFCCBC
+    process "7. Generate 3\nAlternatives" as p7 #FFCCBC
+    process "8. Format\nResponse" as p8 #E1F5FF
+}
+
+' Database Operations
+rectangle "Database Operations" {
+    process "9. Update Event\ngenerated_content\nJSONB field" as p9 #E1F5FF
+    process "10. Set\ngeneration_status\nto 'completed'" as p10 #E1F5FF
+    data_store "PostgreSQL\nEvent Table" as db1 #FFF3E0
+}
+
+' Output/Response
+rectangle "Response & Display" {
+    process "11. Serialize Event\nto JSON" as p11 #E1F5FF
+    entity "API Response\n(suggestions[]|\ngenerated_content)" as api_resp #FFF3E0
+    entity "Frontend State\nUpdate" as ui_state #E1F5FF
+}
+
+' Flows
+csv_source --> p1 : raw CSV bytes
+p1 --> p2 : parsed rows
+p2 --> p3 : validated data
+p3 --> db1 : bulk INSERT\nEvents
+
+prompt_source --> p5 : {token, prompt}
+p5 --> p4 : validated\nrequest
+
+p4 -.->|refinement_type=prompt| p6 : route to LLM
+p4 -.->|refinement_type=direct| p8 : skip LLM
+
+p6 --> p7 : prompt + context
+p7 --> p8 : 3 suggestions
+p8 --> p9 : selected suggestion
+
+direct_source --> p5 : {token, content}
+p5 -.->|direct edit| p9 : bypass LLM
+
+p9 --> p10 : update + timestamp
+p10 --> db1 : JSONB atomic update
+db1 --> p11 : return Event
+
+p11 --> api_resp : {"generated_content": {...}}
+api_resp --> ui_state : populate UI\ntabs & preview
+ui_state --> staff : display options\nto staff
+
+' Legend data stores
+data_store "Cache\n(Redis)" as db2 #FFF3E0
+p5 -.->|token validation| db2 : JWT blacklist check
+db2 -.-> p5 : cached token
+
+legend right
+    | Symbol | Meaning |
+    | <#E1F5FF> Process |
+    | <#FFF3E0> Data Store/Source |
+    | <#FFCCBC> External Service |
+    | <#E8F5E9> Actor |
+    | ─→ | Direct Flow |
+    | -.→ | Conditional Flow |
+endlegend
+
+note bottom of p1, p2, p3
+    CSV Import Path (N8N Workflow)
+    No JWT required
+    Triggered by n8n webhook
+end note
+
+note bottom of p5, p6, p7
+    Refinement Path (Django API + N8N)
+    JWT Required (IsAuthenticated)
+    Routes based on refinement_type
+end note
+
+note right of p6
+    Groq LLM Integration
+    Model: llama-3.3-70b-versatile
+    Temperature: 0.8
+    Returns: 3 suggestions (n=3)
+end note
+
+note right of p9, p10, db1
+    Atomic JSONB Update
+    Single transaction
+    Prevents race conditions
+    Sets timestamp for audit trail
+end note
+
+@enduml

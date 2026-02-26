@@ -1,0 +1,115 @@
+@startuml Sprint4_FrontendMockup
+!define BUTTON_COLOR #2196F3
+!define INPUT_COLOR #F5F5F5
+!define BORDER_COLOR #BDBDBD
+!define TEXT_COLOR #212121
+!define HEADER_COLOR #1976D2
+
+skinparam backgroundColor #FFFFFF
+skinparam componentBackgroundColor #F5F5F5
+skinparam componentBorderColor #BDBDBD
+skinparam componentFontColor #212121
+
+title Frontend Mockup - EventRefinementChatbot Modal
+
+rectangle "Staff Event Manager Dashboard" #FFFFFF {
+    rectangle "Event Table (Partial)" #F5F5F5 {
+        line #BDBDBD [0, 0] to [500, 0]
+        
+        line #FFFFFF [10, 20] to [490, 20]
+        text "Event Name | Date | Visibility | Status | Actions" #1976D2 [20, 25]
+        line #BDBDDB [10, 35] to [490, 35]
+        
+        text "Research Summit 2026 | 2026-02-15 | Public | Draft | [Edit] [Refine] [Generate]" #212121 [20, 50]
+        line #E0E0E0 [10, 65] to [490, 65]
+        
+        text "AI Ethics Seminar | 2026-03-01 | Internal | Draft | [Edit] [Refine] [Generate]" #212121 [20, 80]
+    }
+}
+
+rectangle "┌─ MODAL DIALOG ─────────────────────────────────────────────────────────┐" #FFFFFF {
+    
+    ' Modal Header
+    rectangle "Event Refinement Chatbot - Research Summit 2026" #1976D2 {
+        text "Event Refinement Chatbot" #FFFFFF [15, 110]
+        text "× [Close]" #FFFFFF [620, 110]
+    }
+    
+    ' Mode Selection
+    rectangle "┌─ REFINEMENT MODE ──────────────────────────────┐" #F5F5F5 {
+        text "Select Mode:" #212121 [20, 140]
+        rectangle "[●] Direct Edit" #E3F2FD [80, 135] #2196F3 [border]
+        rectangle "[ ] AI Suggestions" #FFFFFF [200, 135] #BDBDBD [border]
+    }
+    
+    ' Tabs for content fields
+    rectangle "┌─ CONTENT TABS (6 fields) ──────────────────────┐" #F5F5F5 {
+        text "social_post_en | social_post_vn | email_body_en | email_body_vn | article_body_en | article_body_vn" #1976D2 [20, 170]
+        line #E0E0E0 [20, 175] to [620, 175]
+    }
+    
+    ' Direct Edit Tab Content (CURRENTLY SHOWN)
+    rectangle "┌─ DIRECT EDIT: social_post_en ──────────────────┐" #FFFFFF {
+        rectangle "Text Editor" #F5F5F5 {
+            text "Join us for groundbreaking research presentation" #212121 [30, 195]
+            text "on AI ethics and sustainable technology!" #212121 [30, 210]
+            text "Limited seats available. Register now." #212121 [30, 225]
+        }
+        text "[Char count: 89/500]" #757575 [30, 240]
+    }
+    
+    ' Preview Panel
+    rectangle "┌─ REAL-TIME PREVIEW ────────────────────────────┐" #FFF9C4 {
+        text "Preview:" #F57F17 [20, 260]
+        rectangle "📱 Social Media Post" #FFFDE7 {
+            text "Join us for groundbreaking research presentation" #212121 [30, 280]
+            text "on AI ethics and sustainable technology!" #212121 [30, 295]
+            text "Limited seats available. Register now." #212121 [30, 310]
+        }
+    }
+    
+    ' Action Buttons (Direct Edit Mode)
+    rectangle "┌─ ACTIONS ──────────────────────────────────────┐" #F5F5F5 {
+        rectangle "[Apply to Event]" #2196F3 [30, 330] #FFFFFF [border]
+        rectangle "[Clear]" #F5F5F5 [150, 330] #BDBDBD [border]
+        rectangle "[Publish]" #4CAF50 [250, 330] #FFFFFF [border]
+        rectangle "[Cancel]" #F44336 [380, 330] #FFFFFF [border]
+    }
+}
+
+note right
+    ╔════════════════════════════════════════╗
+    ║  DIRECT EDIT MODE VIEW (Shown Above)   ║
+    ║  • Staff types/edits content directly  ║
+    ║  • Real-time preview updates           ║
+    ║  • Apply triggers immediate DB update  ║
+    ║  • Latency: <200ms                     ║
+    ╚════════════════════════════════════════╝
+    
+    Click on "AI Suggestions" tab to see:
+    ┌──────────────────────────────────────┐
+    │ Enter Refinement Prompt:             │
+    │ [Make this more engaging for PhDs]   │
+    │                                      │
+    │         [Generate Suggestions ▶]    │
+    │                                      │
+    │ (Shows loading spinner for 15-20s)  │
+    │                                      │
+    │ Alternative 1 (2 votes):             │
+    │ Connect with elite researchers...   │
+    │ [Select] [Preview]                   │
+    │                                      │
+    │ Alternative 2 (Most Popular):        │
+    │ Explore cutting-edge research...    │
+    │ [Select] [Preview] ✓                 │
+    │                                      │
+    │ Alternative 3 (Concise):             │
+    │ Be part of groundbreaking work...   │
+    │ [Select] [Preview]                   │
+    │                                      │
+    │ Selected: Alt #2                     │
+    │   [Apply] [Regenerate] [Cancel]      │
+    └──────────────────────────────────────┘
+end note
+
+@enduml

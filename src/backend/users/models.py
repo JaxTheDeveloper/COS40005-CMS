@@ -3,6 +3,8 @@ from django.db import models
 from django.core.validators import RegexValidator
 import uuid
 
+from src.backend.core.base_models import BaseModel
+
 
 class User(AbstractUser):
     """
@@ -52,21 +54,19 @@ class User(AbstractUser):
         return f"{self.email} ({self.user_type})"
 
 
-class Role(models.Model):
+class Role(BaseModel):
     """
     Role model for defining custom roles with specific permissions
     """
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     permissions = models.JSONField(default=dict)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
 
 
-class UserRole(models.Model):
+class UserRole(BaseModel):
     """
     Intermediate model for user-role assignments with validity period
     """
@@ -74,9 +74,6 @@ class UserRole(models.Model):
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     valid_from = models.DateTimeField()
     valid_until = models.DateTimeField(null=True, blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_roles')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('user', 'role')
@@ -85,7 +82,7 @@ class UserRole(models.Model):
         return f"{self.user.email} - {self.role.name}"
 
 
-class Course(models.Model):
+class Course(BaseModel):
     """
     Course model representing a full program of study
     """
@@ -96,14 +93,12 @@ class Course(models.Model):
     credit_points = models.IntegerField(default=0)
     department = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.code} - {self.name}"
 
 
-class Unit(models.Model):
+class Unit(BaseModel):
     """
     Unit model representing individual subjects/units within courses
     """
@@ -115,14 +110,12 @@ class Unit(models.Model):
     convenor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='convened_units')
     department = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.code} - {self.name}"
 
 
-class StudentProfile(models.Model):
+class StudentProfile(BaseModel):
     """
     Additional student-specific information
     """
@@ -138,8 +131,6 @@ class StudentProfile(models.Model):
         ('suspended', 'Suspended'),
         ('graduated', 'Graduated')
     ], default='good')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.student_id} - {self.user.email}"
@@ -152,7 +143,7 @@ class StudentProfile(models.Model):
         super().save(*args, **kwargs)
 
 
-class ParentGuardian(models.Model):
+class ParentGuardian(BaseModel):
     """
     Parent/Guardian information linked to students
     """
@@ -161,14 +152,12 @@ class ParentGuardian(models.Model):
     relationship = models.CharField(max_length=50, blank=True)
     is_emergency_contact = models.BooleanField(default=False)
     is_financial_responsible = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.user.email} - {self.relationship}"
 
 
-class Enrollment(models.Model):
+class Enrollment(BaseModel):
     """
     Unit enrollment records for students
     """
@@ -184,8 +173,6 @@ class Enrollment(models.Model):
     ], default='enrolled')
     grade = models.CharField(max_length=2, blank=True)
     marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('student', 'unit', 'semester', 'year')
@@ -194,7 +181,7 @@ class Enrollment(models.Model):
         return f"{self.student.email} - {self.unit.code} ({self.semester} {self.year})"
 
 
-class Scholarship(models.Model):
+class Scholarship(BaseModel):
     """
     Scholarship information and awards
     """
@@ -204,14 +191,12 @@ class Scholarship(models.Model):
     duration_semesters = models.IntegerField(default=1)
     requirements = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
 
 
-class ScholarshipApplication(models.Model):
+class ScholarshipApplication(BaseModel):
     """
     Student applications for scholarships
     """
@@ -228,18 +213,15 @@ class ScholarshipApplication(models.Model):
     reviewer_notes = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='reviewed_applications')
     reviewed_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.student.email} - {self.scholarship.name}"
 
 
-class AuditLog(models.Model):
+class AuditLog(BaseModel):
     """
     Audit log for tracking important system actions
     """
-    action_time = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     action = models.CharField(max_length=50)
     resource_type = models.CharField(max_length=50)
@@ -249,10 +231,10 @@ class AuditLog(models.Model):
     user_agent = models.TextField(blank=True)
 
     def __str__(self):
-        return f"{self.action_time} - {self.user.email if self.user else 'System'} - {self.action}"
+        return f"{self.created_at} - {self.user.email if self.user else 'System'} - {self.action}"
 
 
-class N8NWorkflow(models.Model):
+class N8NWorkflow(BaseModel):
     """
     N8N workflow configurations and triggers
     """
@@ -264,15 +246,12 @@ class N8NWorkflow(models.Model):
     is_active = models.BooleanField(default=True)
     last_run = models.DateTimeField(null=True, blank=True)
     error_count = models.IntegerField(default=0)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.name} ({self.workflow_id})"
 
 
-class N8NExecutionLog(models.Model):
+class N8NExecutionLog(BaseModel):
     """
     Execution logs for N8N workflows
     """
@@ -290,7 +269,6 @@ class N8NExecutionLog(models.Model):
     input_data = models.JSONField(default=dict)
     output_data = models.JSONField(null=True, blank=True)
     error_details = models.JSONField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.workflow.name} - {self.execution_id}"

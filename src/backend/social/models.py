@@ -1,16 +1,16 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from src.backend.users.models import User
+from src.backend.core.base_models import BaseModel
 
 
-class SocialGold(models.Model):
+class SocialGold(BaseModel):
     """
     Tracks social gold points earned by students
     """
     student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='social_gold')
     current_balance = models.PositiveIntegerField(default=0)
     lifetime_earned = models.PositiveIntegerField(default=0)
-    last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = 'Social Gold Balance'
@@ -20,7 +20,7 @@ class SocialGold(models.Model):
         return f"{self.student.email} - {self.current_balance} points"
 
 
-class SocialGoldTransaction(models.Model):
+class SocialGoldTransaction(BaseModel):
     """
     Records individual social gold transactions
     """
@@ -37,7 +37,6 @@ class SocialGoldTransaction(models.Model):
     reason = models.CharField(max_length=200)
     details = models.TextField(blank=True)
     awarded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='awarded_social_gold')
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -55,7 +54,7 @@ class SocialGoldTransaction(models.Model):
             raise ValidationError('Deduct and expire transactions must have negative amounts.')
 
 
-class Achievement(models.Model):
+class Achievement(BaseModel):
     """
     Defines achievements that can be earned through social gold
     """
@@ -64,8 +63,6 @@ class Achievement(models.Model):
     points_required = models.PositiveIntegerField()
     badge_image = models.ImageField(upload_to='achievement_badges/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['points_required', 'name']
@@ -74,7 +71,7 @@ class Achievement(models.Model):
         return f"{self.name} ({self.points_required} points)"
 
 
-class StudentAchievement(models.Model):
+class StudentAchievement(BaseModel):
     """
     Records achievements earned by students
     """

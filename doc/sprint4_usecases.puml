@@ -1,0 +1,122 @@
+@startuml Sprint4_UseCases
+!define ACTOR_COLOR #E3F2FD
+!define SYSTEM_COLOR #F3E5F5
+!define PRIMARY_COLOR #2196F3
+!define SECONDARY_COLOR #9C27B0
+
+title Use Case Diagram - Event Refinement System
+
+skinparam actor {
+    backgroundColor #E3F2FD
+    borderColor #1976D2
+}
+
+skinparam usecase {
+    backgroundColor #F3E5F5
+    borderColor #6A1B9A
+}
+
+actor "Staff User" as staff #E3F2FD
+actor "N8N Workflow\nEngine" as n8n #FFF9C4
+actor "Groq LLM\nService" as groq #FFCCBC
+actor "System\nAdmin" as admin #E3F2FD
+
+rectangle "Event Management System" {
+    usecase "View Staff\nDashboard" as uc_view <<PRIMARY_COLOR>>
+    usecase "View Event\nTable" as uc_event_table <<PRIMARY_COLOR>>
+    usecase "Open Refine\nModal" as uc_open_modal <<PRIMARY_COLOR>>
+    
+    usecase "Direct Edit\nMode" as uc_direct_edit <<PRIMARY_COLOR>>
+    usecase "Type Content\nDirectly" as uc_type_content
+    usecase "Preview\nContent" as uc_preview
+    usecase "Apply Changes\nImmediately" as uc_apply_direct
+    
+    usecase "AI Suggestions\nMode" as uc_ai_mode <<SECONDARY_COLOR>>
+    usecase "Enter Refinement\nPrompt" as uc_enter_prompt
+    usecase "Request Groq\nGeneration" as uc_request_groq <<SECONDARY_COLOR>>
+    usecase "Receive Multiple\nAlternatives" as uc_receive_alts <<SECONDARY_COLOR>>
+    usecase "Select Best\nSuggestion" as uc_select_best
+    usecase "Apply Suggestion\nto Event" as uc_apply_suggestion
+    
+    usecase "Upload CSV\nFile" as uc_csv_upload <<PRIMARY_COLOR>>
+    usecase "Parse & Validate\nCSV" as uc_csv_validate
+    usecase "Import Events\nBulk" as uc_import_bulk
+    usecase "Verify Imported\nCount" as uc_verify_import
+    
+    usecase "Manage N8N\nWorkflows" as uc_manage_wf <<SECONDARY_COLOR>>
+    usecase "Configure\nAuthentication" as uc_configure_auth
+    usecase "Monitor API\nHealth" as uc_monitor_health
+}
+
+' Staff user interactions
+staff --> uc_view : starts here
+staff --> uc_event_table : views
+staff --> uc_open_modal : clicks Refine
+staff --> uc_csv_upload : uploads CSV
+
+' Direct edit path
+uc_open_modal --> uc_direct_edit : selects mode
+uc_direct_edit --> uc_type_content : enters text
+uc_type_content --> uc_preview : real-time shows
+uc_direct_edit --> uc_apply_direct : clicks Apply
+uc_apply_direct --> uc_view : event updated
+
+' AI suggestions path
+uc_open_modal --> uc_ai_mode : selects mode
+uc_ai_mode --> uc_enter_prompt : types prompt
+uc_enter_prompt --> uc_request_groq : clicks Generate
+uc_request_groq --> n8n : triggers webhook
+n8n --> groq : calls LLM\nwith prompt
+
+uc_request_groq --> uc_receive_alts : receives\n3 alternatives
+uc_receive_alts --> uc_preview : shows options
+uc_receive_alts --> uc_select_best : staff chooses
+uc_select_best --> uc_apply_suggestion : clicks Apply
+uc_apply_suggestion --> uc_view : event updated
+
+' CSV import path
+uc_csv_upload --> uc_csv_validate : n8n validates
+uc_csv_validate --> uc_import_bulk : creates Events
+uc_import_bulk --> uc_verify_import : shows count
+uc_verify_import --> uc_view : events appear
+
+' Admin/System interactions
+admin --> uc_manage_wf : manages workflows
+admin --> uc_configure_auth : configures JWT
+admin --> uc_monitor_health : monitors system
+
+' Internal system flows (not user-facing)
+uc_apply_direct -.->|HTTP POST| uc_apply_suggestion : system\nbackend call
+uc_apply_suggestion -.->|updates DB| uc_view : persists
+
+legend right
+    | Actor | Type |
+    | Staff | Primary Actor |
+    | N8N | Secondary Actor |
+    | Groq | External Service |
+    | Admin | Admin Actor |
+    | | |
+    | Usecase Color | Scope |
+    | <#2196F3> Primary Flow |
+    | <#9C27B0> LLM Integration |
+endlegend
+
+note right of uc_direct_edit
+    Immediate Update
+    No N8N roundtrip
+    Latency: <200ms
+end note
+
+note right of uc_ai_mode
+    LLM-Powered
+    N8N Orchestration
+    Latency: 15-20s
+end note
+
+note right of uc_csv_upload
+    Multipart/form-data
+    N8N extractFromFile
+    Bulk import max 1000 rows
+end note
+
+@enduml

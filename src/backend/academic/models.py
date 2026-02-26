@@ -1,9 +1,10 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from src.backend.users.models import User
+from src.backend.core.base_models import BaseModel
 
 
-class Course(models.Model):
+class Course(BaseModel):
     """
     Course model representing a full program of study
     """
@@ -14,8 +15,6 @@ class Course(models.Model):
     credit_points = models.IntegerField(default=0)
     department = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['code']
@@ -24,7 +23,7 @@ class Course(models.Model):
         return f"{self.code} - {self.name}"
 
 
-class Unit(models.Model):
+class Unit(BaseModel):
     """
     Unit model representing individual subjects/units within courses
     """
@@ -37,8 +36,6 @@ class Unit(models.Model):
     convenor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='academic_units_convened')
     department = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['code']
@@ -55,7 +52,7 @@ class Unit(models.Model):
                 raise ValidationError('A unit cannot be its own anti-requisite.')
 
 
-class SemesterOffering(models.Model):
+class SemesterOffering(BaseModel):
     """
     Represents when a unit is offered in a specific semester
     """
@@ -76,8 +73,6 @@ class SemesterOffering(models.Model):
     current_enrollment = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('unit', 'year', 'semester')
@@ -95,7 +90,7 @@ class SemesterOffering(models.Model):
         return self.current_enrollment >= self.capacity if self.capacity > 0 else False
 
 
-class UnitResource(models.Model):
+class UnitResource(BaseModel):
     """
     Resources (files, links) associated with a unit
     """
@@ -114,9 +109,6 @@ class UnitResource(models.Model):
     file = models.FileField(upload_to='unit_resources/', null=True, blank=True)
     url = models.URLField(null=True, blank=True)
     is_required = models.BooleanField(default=False)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['unit', 'resource_type', 'title']

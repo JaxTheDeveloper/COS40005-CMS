@@ -1,0 +1,35 @@
+Was formsubmission.submitted_at renamed to formsubmission.created_at (a DateTimeField)? [y/N] Was socialgold.last_updated renamed to socialgold.updated_at (a DateTimeField)? [y/N] Was auditlog.action_time renamed to auditlog.created_at (a DateTimeField)? [y/N] Traceback (most recent call last):
+  File "/app/manage.py", line 20, in <module>
+    main()
+  File "/app/manage.py", line 16, in main
+    execute_from_command_line(sys.argv)
+  File "/usr/local/lib/python3.11/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "/usr/local/lib/python3.11/site-packages/django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "/usr/local/lib/python3.11/site-packages/django/core/management/base.py", line 412, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "/usr/local/lib/python3.11/site-packages/django/core/management/base.py", line 458, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/django/core/management/base.py", line 106, in wrapper
+    res = handle_func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/django/core/management/commands/makemigrations.py", line 233, in handle
+    changes = autodetector.changes(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/django/db/migrations/autodetector.py", line 46, in changes
+    changes = self._detect_changes(convert_apps, graph)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/django/db/migrations/autodetector.py", line 179, in _detect_changes
+    self.create_renamed_fields()
+  File "/usr/local/lib/python3.11/site-packages/django/db/migrations/autodetector.py", line 960, in create_renamed_fields
+    if self.questioner.ask_rename(
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/django/db/migrations/questioner.py", line 220, in ask_rename
+    return self._boolean_input(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/django/db/migrations/questioner.py", line 101, in _boolean_input
+    result = input()
+             ^^^^^^^
+KeyboardInterrupt

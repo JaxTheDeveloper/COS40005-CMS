@@ -1,0 +1,123 @@
+@startuml Sprint4_DeploymentArchitecture
+!define CONTAINER_COLOR #BBDEFB
+!define NETWORK_COLOR #C8E6C9
+!define VOLUME_COLOR #FFE0B2
+
+title Docker Deployment Architecture - Development Stack
+
+node "Docker Host (Windows)" {
+    cloud "Docker Bridge Network: 'postgres'" as network <<NETWORK>> #C8E6C9
+    
+    package "Containers" {
+        rectangle "Django Backend\nContainer\n(cos40005_backend:8000)" as django_c <<CONTAINER>> #BBDEFB {
+            component [Gunicorn WSGI\n:8000] as gunicorn
+            component [Django 4.2\nConfig] as django_app
+            component [Core App\n(views_api.py)] as core_views
+            
+            gunicorn --> django_app
+            django_app --> core_views
+        }
+        
+        rectangle "PostgreSQL\nContainer\n(cos40005_postgres:5432)" as pg_c <<CONTAINER>> #BBDEFB {
+            component [PostgreSQL 18\nDaemon] as pg_daemon
+            component [cms_db\nDatabase] as cms_db
+            
+            pg_daemon --> cms_db
+        }
+        
+        rectangle "N8N Workflow Engine\nContainer\n(cos40005_n8n:5678)" as n8n_c <<CONTAINER>> #BBDEFB {
+            component [N8N Runtime\n:5678] as n8n_runtime
+            component [CSV Workflow\n(json)] as csv_wf
+            component [Refinement Workflow\n(json)] as ref_wf
+            
+            n8n_runtime --> csv_wf
+            n8n_runtime --> ref_wf
+        }
+        
+        rectangle "Redis Cache\nContainer\n(cos40005_redis:6379)" as redis_c <<CONTAINER>> #BBDEFB {
+            component [Redis Server\n:6379] as redis_srv
+            component [Session/Queue\nStore] as redis_store
+            
+            redis_srv --> redis_store
+        }
+        
+        rectangle "PgAdmin UI\nContainer\n(cos40005_pgadmin:5050)" as pgadmin_c <<CONTAINER>> #BBDEFB {
+            component [PgAdmin 4\n:5050] as pgadmin
+        }
+    }
+    
+    ' Network connections (internal to bridge)
+    django_c -.->|tcp:5432| network
+    pg_c -.->|expose:5432| network
+    n8n_c -.->|tcp:5678| network
+    redis_c -.->|tcp:6379| network
+    pgadmin_c -.->|tcp:5050| network
+    
+    ' Internal service-to-service
+    gunicorn -->|HTTP localhost| n8n_runtime : webhook calls\n(POST /webhook-test/csv-import)
+    n8n_runtime -->|HTTP Host override| gunicorn : callback\n(POST /api/core/events/*/apply-suggestion)
+    gunicorn -->|connect| pg_daemon : ORM queries\n(psycopg2)
+    gunicorn -->|connect| redis_srv : cache/session
+}
+
+node "Host Machine (Windows)" {
+    package "Port Bindings" {
+        port [8000 ← Backend API] as port8000
+        port [5678 ← N8N UI] as port5678
+        port [5050 ← PgAdmin] as port5050
+        port [3000 ← React Dev] as port3000
+    }
+}
+
+node "External Services" {
+    rectangle "Groq API\n(HTTPS)" as groq_ext <<EXTERNAL>> #FFCCBC
+}
+
+node "Development Client" {
+    component [React Dev Server\n(localhost:3000)] as react_dev
+    component [PowerShell\nTest Scripts] as powershell
+}
+
+' Host to external
+gunicorn -->|N8N Webhook| n8n_runtime : docker bridge\nHTTP localhost
+n8n_runtime -->|Groq API\nkey: env var| groq_ext : HTTPS\n(llama-3.3-70b-versatile)
+
+' Client access
+port8000 <-- react_dev : fetch /api/...\n(JWT Bearer)
+port5678 <-- react_dev : manage workflows
+port5050 <-- react_dev : admin DB
+powershell -.->|HTTP| port8000 : CSV upload\nmultipart/form-data
+
+' Volumes
+rectangle "Volumes" as volumes {
+    rectangle "n8n_data\n(/home/node/.n8n)" as n8n_vol <<VOLUME>> #FFE0B2
+    rectangle "postgres_data\n(/var/lib/postgresql/data)" as pg_vol <<VOLUME>> #FFE0B2
+}
+
+n8n_c --->|mounts| n8n_vol : persist workflows
+pg_c --->|mounts| pg_vol : persist database
+
+legend right
+    | Element | Type |
+    | <#BBDEFB> Container |
+    | <#C8E6C9> Docker Network |
+    | <#FFE0B2> Volume |
+    | <#FFCCBC> External |
+endlegend
+
+note right of network
+    Bridge Driver
+    DNS: cos40005_backend:8000
+    DNS: cos40005_postgres:5432
+    DNS: cos40005_n8n:5678
+end note
+
+note right of gunicorn
+    HOST Header Override
+    n8n HTTP node sets:
+    Headers: {Host: localhost}
+    to bypass Django
+    ALLOWED_HOSTS validation
+end note
+
+@enduml

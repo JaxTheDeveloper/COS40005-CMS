@@ -6,6 +6,8 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
+      # Note: This only creates ONE database on startup (SwinCMS). 
+      # See note below for the n8n database
       POSTGRES_DB: SwinCMS
       PGDATA: /data/postgres
     volumes:
@@ -67,6 +69,36 @@ services:
     depends_on:
       - postgres
 
+  n8n:
+    image: docker.io/n8nio/n8n:latest
+    container_name: cos40005_n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=cos40005_n8n
+      - N8N_PORT=5678
+      
+      # --- NGROK / OAUTH UPDATES ---
+      # This tells n8n to use the ngrok domain for webhooks and OAuth callbacks
+      - WEBHOOK_URL=https://conditionally-brimful-exie.ngrok-free.dev
+      - N8N_EDITOR_BASE_URL=https://conditionally-brimful-exie.ngrok-free.dev
+      
+      # --- DATABASE CONFIG ---docker compose up -d
+      - DB_TYPE=postgres
+      - DB_POSTGRE_HOST=cos40005_postgres
+      - DB_POSTGRE_USER=postgres
+      - DB_POSTGRE_PASSWORD=password
+      - DB_POSTGRE_DATABASE=n8n
+      - NODE_ENV=development
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - postgres
+    depends_on:
+      - postgres
+      - backend # n8n also needs to wait on backend
+    restart: unless-stopped
+
 networks:
   postgres:
     driver: bridge
@@ -74,3 +106,4 @@ networks:
 volumes:
   postgres:
   pgadmin_data:
+  n8n_data:
