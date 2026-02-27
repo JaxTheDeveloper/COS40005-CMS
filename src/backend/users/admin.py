@@ -65,7 +65,7 @@ class ScholarshipApplicationAdmin(admin.ModelAdmin):
 
 @admin.register(models.AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display = ('action_time', 'user', 'action', 'resource_type')
+    list_display = ('created_at', 'user', 'action', 'resource_type')
     search_fields = ('user__email', 'action', 'resource_type')
 
 

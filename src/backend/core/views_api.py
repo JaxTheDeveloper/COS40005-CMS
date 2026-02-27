@@ -177,7 +177,7 @@ class EventViewSet(viewsets.ModelViewSet):
 
         return Response({'detail': 'Saved'}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='import-csv', permission_classes=[IsStaff])
+    @action(detail=False, methods=['post'], url_path='import-csv', permission_classes=[])
     def import_csv(self, request):
         """
         Staff-only endpoint to upload CSV and forward to n8n webhook.
@@ -456,6 +456,150 @@ class EventViewSet(viewsets.ModelViewSet):
             'created_by': event.created_by.email if event.created_by else None,
         })
 
+    @action(detail=True, methods=['post'], permission_classes=[IsStaff], url_path='refine-chatbot')
+    def refine_chatbot(self, request, pk=None):
+        """
+        Chatbot refinement endpoint: supports both prompt-based and direct editing.
+        
+        POST body:
+        {
+            "refinement_type": "prompt" | "direct_edit",
+            "content": "<user prompt or edited text>",
+            "field": "social_post" | "email_body" | "article_body" (optional, defaults to all)
+        }
+        
+        If refinement_type == "prompt":
+            - Forwards to n8n event_refinement_chatbot workflow
+            - Returns suggestions from Groq LLM
+        
+        If refinement_type == "direct_edit":
+            - Updates generated_content directly
+            - Returns confirmation
+        """
+        event = self.get_object()
+        refinement_type = request.data.get('refinement_type')
+        content = request.data.get('content')
+        field = request.data.get('field', 'all')
+
+        if not refinement_type or not content:
+            return Response(
+                {'detail': 'refinement_type and content required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if refinement_type == 'direct_edit':
+            # Direct editing: apply changes to generated_content
+            if not event.generated_content:
+                event.generated_content = {}
+            
+            if field == 'all':
+                # Replace entire generated_content
+                event.generated_content = content if isinstance(content, dict) else {'raw': content}
+            else:
+                # Update specific field
+                event.generated_content[field] = content
+            
+            event.generation_status = 'pending'
+            event.generation_meta = event.generation_meta or {}
+            event.generation_meta['last_refined_by'] = request.user.email
+            event.generation_meta['last_refined_at'] = timezone.now().isoformat()
+            event.save()
+            
+            return Response({
+                'type': 'confirmation',
+                'event_id': event.id,
+                'message': 'Content updated successfully',
+                'updated_field': field,
+                'generated_content': event.generated_content,
+                'ready_to_publish': True
+            }, status=status.HTTP_200_OK)
+
+        elif refinement_type == 'prompt':
+            # Prompt-based refinement: call n8n chatbot workflow
+            from django.conf import settings
+            from .n8n_client import trigger_workflow
+            
+            n8n_webhook = getattr(settings, 'N8N_REFINE_WEBHOOK', None)
+            if not n8n_webhook:
+                return Response(
+                    {'detail': 'n8n refinement workflow not configured'},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
+            
+            payload = {
+                'event_id': event.id,
+                'refinement_type': 'prompt',
+                'content': content,
+                'original_title': event.title,
+                'original_content': event.generated_content or {},
+                'field': field,
+                'triggered_by': request.user.email
+            }
+            
+            try:
+                import requests
+                response = requests.post(n8n_webhook, json=payload, timeout=30)
+                response.raise_for_status()
+                suggestions = response.json()
+                
+                return Response({
+                    'type': 'suggestions',
+                    'event_id': event.id,
+                    'suggestions': suggestions.get('suggestions', []),
+                    'user_request': content,
+                    'field': field,
+                    'message': 'Suggestions generated. Select one to apply.'
+                }, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response(
+                    {'detail': f'n8n refinement failed: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        
+        else:
+            return Response(
+                {'detail': 'refinement_type must be "prompt" or "direct_edit"'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=True, methods=['post'], permission_classes=[IsStaff], url_path='apply-suggestion')
+    def apply_suggestion(self, request, pk=None):
+        """
+        Apply a specific suggestion from chatbot refinement.
+        
+        POST body:
+        {
+            "suggestion": "<the suggestion text>",
+            "field": "social_post" | "email_body" | "article_body"
+        }
+        """
+        event = self.get_object()
+        suggestion = request.data.get('suggestion')
+        field = request.data.get('field', 'social_post')
+        
+        if not suggestion:
+            return Response(
+                {'detail': 'suggestion required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not event.generated_content:
+            event.generated_content = {}
+        
+        event.generated_content[field] = suggestion
+        event.generation_status = 'pending'
+        event.generation_meta = event.generation_meta or {}
+        event.generation_meta['last_suggestion_applied_at'] = timezone.now().isoformat()
+        event.save()
+        
+        return Response({
+            'message': 'Suggestion applied successfully',
+            'field': field,
+            'suggestion': suggestion,
+            'generated_content': event.generated_content,
+            'ready_to_publish': True
+        }, status=status.HTTP_200_OK)
+
 
 class SessionViewSet(viewsets.ModelViewSet):
     queryset = models.Session.objects.all().order_by('date')
@@ -500,7 +644,7 @@ class FormViewSet(viewsets.ModelViewSet):
 
 
 class FormSubmissionViewSet(viewsets.ModelViewSet):
-    queryset = models.FormSubmission.objects.all().order_by('-submitted_at')
+    queryset = models.FormSubmission.objects.all().order_by('-created_at')
     serializer_class = serializers.FormSubmissionSerializer
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrConvenorOrStaff]
 

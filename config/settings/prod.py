@@ -50,6 +50,12 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
+# n8n Integration for Production
+# Uses internal Docker network hostname for backend->n8n communication
+N8N_IMPORT_WEBHOOK = os.environ.get('N8N_IMPORT_WEBHOOK', 'http://cos40005_n8n_prod:5678/webhook-test/import-schedule')
+N8N_API_KEY = os.environ.get('N8N_API_KEY')
+N8N_WEBHOOK_SECRET = os.environ.get('N8N_WEBHOOK_SECRET')
+
 # Static and Media Files
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

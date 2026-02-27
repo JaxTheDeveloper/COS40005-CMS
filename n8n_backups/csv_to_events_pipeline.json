@@ -1,0 +1,145 @@
+{
+    "name": "CSV to Events Pipeline",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "csv-import",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [
+                -800,
+                0
+            ],
+            "id": "webhook-csv",
+            "name": "Webhook: CSV Upload"
+        },
+        {
+            "parameters": {
+                "dataPropertyName": "data",
+                "options": {
+                    "headerRow": true
+                }
+            },
+            "type": "n8n-nodes-base.extractFromFile",
+            "typeVersion": 1,
+            "position": [
+                -600,
+                0
+            ],
+            "id": "parse-csv",
+            "name": "Extract from File"
+        },
+        {
+            "parameters": {
+                "jsCode": "return items.map(item => {\n  const row = item.json;\n  return {\n    json: {\n      event_title: row.Event_Title || '',\n      event_date: row.Event_Date || '',\n      start_time: row.Start_Time || '',\n      location: row.Location || '',\n      description: row.Description || '',\n      category: row.Category || 'General'\n    }\n  };\n});"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -400,
+                0
+            ],
+            "id": "transform-csv",
+            "name": "Transform Data"
+        },
+        {
+            "parameters": {
+                "resource": "generic",
+                "requestMethod": "POST",
+                "url": "http://cos40005_backend:8000/api/core/events/import-csv/",
+                "sendBody": true,
+                "bodyContentType": "form-data",
+                "formParameters": {
+                    "parameters": [
+                        {
+                            "name": "data",
+                            "value": "={{JSON.stringify($input.all())}}"
+                        }
+                    ]
+                },
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Host",
+                            "value": "localhost"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                -200,
+                0
+            ],
+            "id": "call-django-import",
+            "name": "Call Django Import"
+        },
+        {
+            "parameters": {
+                "jsCode": "return items.map(item => {\n  const response = item.json;\n  return {\n    json: {\n      status: 'success',\n      message: 'Events imported successfully',\n      imported_count: response.imported_count || 0\n    }\n  };\n});"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "id": "format-response",
+            "name": "Format Response"
+        }
+    ],
+    "connections": {
+        "Webhook: CSV Upload": {
+            "main": [
+                [
+                    {
+                        "node": "Extract from File",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract from File": {
+            "main": [
+                [
+                    {
+                        "node": "Transform Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Transform Data": {
+            "main": [
+                [
+                    {
+                        "node": "Call Django Import",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Call Django Import": {
+            "main": [
+                [
+                    {
+                        "node": "Format Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {}
+}

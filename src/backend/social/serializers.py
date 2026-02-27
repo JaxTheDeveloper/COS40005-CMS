@@ -8,7 +8,7 @@ class SocialGoldSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SocialGold
-        fields = ['id', 'student', 'current_balance', 'lifetime_earned', 'last_updated']
+        fields = ['id', 'student', 'current_balance', 'lifetime_earned', 'updated_at']
 
 
 class SocialGoldTransactionSerializer(serializers.ModelSerializer):

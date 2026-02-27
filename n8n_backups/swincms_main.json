@@ -1,0 +1,185 @@
+{
+  "name": "swincms_main",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                0,
+                3,
+                1
+              ],
+              "triggerAtHour": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -576,
+        -192
+      ],
+      "id": "7a7c0314-934c-448c-979d-3b66f6c71905",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "you are a media/recruitment person for Swinburne Vietnam, Danang location helpiing Swinburne Da Nang to grow in presence as the top 1% of the university worldwide. \n\nYour task is to generate and recommend high quality, high value recruitment content that aligns with the suitable demographics (high school graduates who wants to find a good university, internally inside swinburne to promote Swinburne Student life, interesting upcoming events, etc.). You also try to recommend short videos incorporating status-quo memes and references to boost engagement on Facebook, TikTok and at Swinburne Website. These topics should be easily expandable into posts.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -368,
+        -192
+      ],
+      "id": "d2f8b4a1-2372-40e5-848e-b0a5f1964246",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n    \"topic\":\"Swinburne Australia and Swinburne Vietnam\",\n\t\"title\": \"𝗔 𝗺𝗲𝗮𝗻𝗶𝗻𝗴𝗳𝘂𝗹 𝗲𝘅𝗰𝗵𝗮𝗻𝗴𝗲 𝗯𝗲𝘁𝘄𝗲𝗲𝗻 𝗦𝘄𝗶𝗻𝗯𝘂𝗿𝗻𝗲 𝗔𝘂𝘀𝘁𝗿𝗮𝗹𝗶𝗮 𝗮𝗻𝗱 𝗦𝘄𝗶𝗻𝗯𝘂𝗿𝗻𝗲 𝗩𝗶𝗲𝘁𝗻𝗮𝗺 🤩\",\n    \"vietnamese_version\":\"(Vietnamese version in the comment)\",\n    \"english_content\":\"✨ On November 7th, 2025, Swinburne Australia’s academic delegation visited Swinburne Vietnam – Hanoi as part of ongoing academic exchanges between the two sides.\\n👉 Beyond meetings and campus tours, the day was filled with insightful discussions, meaningful exchanges, and inspiring connections between academics and students.\\n📌 Through open dialogue on curriculum innovation and teaching excellence, both sides continue to reaffirm their shared vision to provide students in Vietnam with a world-class learning experience closely aligned with Swinburne Australia.\\n🎥 Let’s look back at some moments that capture the spirit of collaboration and innovation from this visit!\",\n    \"vietnamese_content\":\"✨ Vào ngày 7 tháng 11 năm 2025, đoàn đại biểu học thuật của Swinburne Australia đã đến thăm Swinburne Việt Nam – Hà Nội, một phần trong chương trình trao đổi học thuật đang diễn ra giữa hai bên.\\n👉 Bên cạnh các buổi gặp gỡ và tham quan khuôn viên trường, chuyến thăm còn tràn ngập những cuộc thảo luận sâu sắc, những trao đổi ý nghĩa và những kết nối đầy cảm hứng giữa các học giả và sinh viên.\\n📌 Thông qua đối thoại cởi mở về đổi mới chương trình giảng dạy và chất lượng giảng dạy xuất sắc, cả hai bên tiếp tục khẳng định tầm nhìn chung là mang đến cho sinh viên Việt Nam trải nghiệm học tập đẳng cấp thế giới, gắn kết chặt chẽ với Swinburne Australia.\\n🎥 Hãy cùng nhìn lại một số khoảnh khắc thể hiện tinh thần hợp tác và đổi mới trong chuyến thăm này!\",\n  \"contact_information\": \"Register now: https://tuyensinh.swin.edu.vn/openday2025\\n📍 Hanoi: 1:00 PM – 4:00 PM | 8 Nov | Hôtel du Parc\\n📍 Ho Chi Minh City: 9:00 AM – 1:00 PM | 9 Nov | Liberty Central Saigon Citypoint\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -192,
+        -16
+      ],
+      "id": "f9361403-08b5-4cbc-9397-05a3eb1ccefb",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "temperature": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        0
+      ],
+      "id": "12f2defd-b411-4d48-8414-97e54691eb5d",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "Kd9sbYXyW1M01S0E",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a Facebook content creator and copywriter for Swinburne Vietnam, Danang Location. You are in charge of writing posts to promote the recruitment process, as well as stunningly announce events to boost student engagement-through scalable, hands-free content systems.\nGiven the title \"{{ $json.output.title }}\", the vietnamese content designation \"{{ $json.output.vietnamese_version }}\", the content in English \"{{ $json.output.english_content }}\" and Vietnamese \"{{$json.output.vietnamese_content}}\", and suggested contant information (you can change it slightly to fit diffrent cases)\": \"{{ $json.output.contact_information}}\" generate text content for a Facebook post. make use of emojis for better customer engagement.\nThere is no limit on text size. However, be concise and persuasive.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -16,
+        -192
+      ],
+      "id": "21ce3fe3-633b-4f52-9c47-41546ce9bfc0",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -16
+      ],
+      "id": "ac940768-6a5a-41bf-b996-5970a1a7c3ba",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "Kd9sbYXyW1M01S0E",
+          "name": "Groq account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "99c6cf7b-3ebb-4f79-9b5a-630ffc7f7d90",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bb709ae20030df1c4b0f5759637f85677b8df22906d0836a494313e61c4dc3ca"
+  },
+  "id": "MpO3Kr0JvFap2Wnb",
+  "tags": []
+}

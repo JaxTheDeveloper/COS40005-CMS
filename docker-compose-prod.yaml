@@ -96,6 +96,34 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  n8n:
+    image: docker.io/n8nio/n8n:latest
+    container_name: cos40005_n8n_prod
+    environment:
+      - N8N_HOST=${N8N_HOST:-cos40005_n8n_prod}
+      - N8N_PORT=5678
+      - DB_TYPE=postgres
+      - DB_POSTGRE_HOST=cos40005_postgres_prod
+      - DB_POSTGRE_USER=${POSTGRES_USER}
+      - DB_POSTGRE_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_POSTGRE_DATABASE=n8n
+      - NODE_ENV=production
+    volumes:
+      - n8n_data:/home/node/.n8n
+    expose:
+      - "5678"
+    networks:
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 networks:
   backend:
     driver: bridge
@@ -105,3 +133,4 @@ volumes:
   static_volume:
   media_volume:
   redis_data:
+  n8n_data:

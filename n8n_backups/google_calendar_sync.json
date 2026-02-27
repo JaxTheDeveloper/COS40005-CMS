@@ -1,0 +1,129 @@
+{
+    "name": "Google Calendar Sync",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "calendar-sync"
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [
+                -800,
+                0
+            ],
+            "id": "webhook-calendar",
+            "name": "Webhook: Calendar Sync"
+        },
+        {
+            "parameters": {
+                "jsCode": "return items.map(item => {\n  const row = item.json;\n\n  let eventDate = new Date(row.event_date || row.Event_Date);\n  if (isNaN(eventDate.getTime())) {\n      throw new Error(`Invalid Date format: ${row.event_date}`);\n  }\n\n  const timeParts = (row.start_time || row.Start_Time || '09:00').split(':');\n  eventDate.setHours(parseInt(timeParts[0]), parseInt(timeParts[1] || 0), 0, 0);\n\n  let endDate = new Date(eventDate);\n  endDate.setHours(endDate.getHours() + 1);\n\n  return {\n    json: {\n      gcal_start: eventDate.toISOString(),\n      gcal_end: endDate.toISOString(),\n      title: row.event_title || row.Event_Title || 'Untitled Event',\n      location: row.location || row.Location || 'TBD',\n      description_payload: JSON.stringify({\n        cms_data: {\n            title: row.event_title || row.Event_Title,\n            description: row.description || '',\n            remarks: row.remarks || ''\n        }\n      }, null, 2)\n    }\n  };\n});"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -600,
+                0
+            ],
+            "id": "validate-event",
+            "name": "Validate Event Data"
+        },
+        {
+            "parameters": {
+                "calendar": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "primary"
+                },
+                "title": "={{$json.title}}",
+                "start": "={{$json.gcal_start}}",
+                "end": "={{$json.gcal_end}}",
+                "description": "={{$json.description_payload}}",
+                "location": "={{$json.location}}",
+                "additionalFields": {}
+            },
+            "type": "n8n-nodes-base.googleCalendar",
+            "typeVersion": 1.3,
+            "position": [
+                -400,
+                0
+            ],
+            "id": "create-calendar-event",
+            "name": "Create Calendar Event"
+        },
+        {
+            "parameters": {
+                "jsCode": "return items.map(item => {\n  const response = item.json;\n  return {\n    json: {\n      status: 'success',\n      message: 'Event synced to Google Calendar',\n      calendar_event_id: response.id || null,\n      calendar_url: response.htmlLink || null\n    }\n  };\n});"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -200,
+                0
+            ],
+            "id": "format-response",
+            "name": "Format Response"
+        },
+        {
+            "parameters": {
+                "respondWith": "lastNode"
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ],
+            "id": "respond-webhook",
+            "name": "Return to Webhook"
+        }
+    ],
+    "connections": {
+        "Webhook: Calendar Sync": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Event Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Event Data": {
+            "main": [
+                [
+                    {
+                        "node": "Create Calendar Event",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Create Calendar Event": {
+            "main": [
+                [
+                    {
+                        "node": "Format Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Response": {
+            "main": [
+                [
+                    {
+                        "node": "Return to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {}
+}

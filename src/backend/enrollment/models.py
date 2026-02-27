@@ -3,9 +3,10 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from src.backend.users.models import User
 from src.backend.academic.models import Unit, SemesterOffering
+from src.backend.core.base_models import BaseModel
 
 
-class Enrollment(models.Model):
+class Enrollment(BaseModel):
     """
     Unit enrollment records for students with prerequisite validation
     """
@@ -24,8 +25,6 @@ class Enrollment(models.Model):
     marks = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     withdrawn_date = models.DateTimeField(null=True, blank=True)
     completion_date = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('student', 'offering')
@@ -105,16 +104,14 @@ class Enrollment(models.Model):
         self.offering.save()
 
 
-class EnrollmentApproval(models.Model):
+class EnrollmentApproval(BaseModel):
     """
     Tracks approval process for enrollments that require it
     """
     enrollment = models.OneToOneField(Enrollment, on_delete=models.CASCADE, related_name='approval')
-    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='enrollment_approvals')
     approved_at = models.DateTimeField(null=True)
     notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Approval for {self.enrollment}"
@@ -138,7 +135,7 @@ class EnrollmentApproval(models.Model):
         self.enrollment.offering.save()
 
 
-class Transcript(models.Model):
+class Transcript(BaseModel):
     """
     Academic transcript tracking past enrollments and academic history
     """
@@ -160,10 +157,6 @@ class Transcript(models.Model):
     # Status
     status = models.CharField(max_length=20, choices=Enrollment.STATUS_CHOICES)
     completion_date = models.DateTimeField(null=True, blank=True)
-    
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['-year', 'semester', 'unit_code']

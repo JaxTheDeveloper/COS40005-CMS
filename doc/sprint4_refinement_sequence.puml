@@ -1,0 +1,136 @@
+@startuml Sprint4_RefinementSequence
+!define API_COLOR #BBDEFB
+!define DATABASE_COLOR #FFE0B2
+!define EXTERNAL_COLOR #FFCCBC
+!define UI_COLOR #E8F5E9
+
+title Sequence Diagram - Event Refinement Flow (AI Suggestions Mode)
+
+participant "Staff\nUI" as ui <<UI>>
+participant "React\nComponent" as react <<UI>>
+participant "Django\nBackend" as django <<API>>
+participant "N8N\nWorkflow" as n8n <<API>>
+participant "Groq\nLLM API" as groq <<EXTERNAL>>
+participant "PostgreSQL\nDatabase" as db <<DATABASE>>
+
+ui ->> react: clicks "Refine"\nbutton (event_id=42)
+activate react
+
+react ->> react: opens Modal\nEventRefinementChatbot
+
+ui ->> react: selects "AI Suggestions"\nmode, enters prompt:\n"Make engaging for MEDIA students"
+activate react
+
+ui ->> react: clicks "Generate\nSuggestions"
+react ->> django: **POST** /api/core/events/42/refine-chatbot/\n{\n  refinement_type: "prompt",\n  content: "Make engaging for Media",\n  field_name: "social_post_en"\n}
+activate django
+
+django ->> django: validate JWT token\n(IsAuthenticated)
+
+django ->> django: extract event_id=42\nfrom request
+
+note over django
+    GET event from cache/DB
+    Validate event exists
+    Validate field_name in whitelist
+end note
+
+django ->> n8n: **POST** http://cos40005_n8n:5678/webhook-test/refine-chatbot\n{\n  event_id: 42,\n  refinement_type: "prompt",\n  content: "Make engaging for Media",\n  field_name: "social_post_en",\n  current_content: "Join us for research...",\n  callback_url: "http://cos40005_backend:8000/api/core/events/42/apply-suggestion/"\n}
+
+deactivate django
+
+react ->> react: set UI state\ngeneration_status = "generating"\nshow loading spinner
+
+activate n8n
+
+n8n ->> n8n: webhook triggers\nevent_refinement_chatbot.json
+
+n8n ->> n8n: Conditional IF node:\nrefine_type == "prompt"?\n=> YES, route to Groq
+
+note over n8n
+    LangChain Agent Node:
+    system_prompt: "You are an event\n    marketing specialist..."
+    user_message: "Current: Join us...\n    Refinement: Make engaging for PhD"
+end note
+
+n8n ->> groq: **POST** https://api.groq.com/openai/v1/chat/completions\n{\n  model: "llama-3.3-70b-versatile",\n  messages: [{role: "system", content: "..."}, {role: "user", content: "..."}],\n  temperature: 0.8,\n  n: 3  // request 3 alternatives\n}
+
+activate groq
+
+groq ->> groq: inference\n~15-20 seconds
+
+groq -->> n8n: **200 OK** {\n  choices: [\n    {message: {content: "Connect with elite researchers..."}},\n    {message: {content: "Explore cutting-edge research..."}},\n    {message: {content: "Be part of groundbreaking..."}}\n  ]\n}
+
+deactivate groq
+
+n8n ->> n8n: extract 3 choices\nfrom Groq response
+
+n8n ->> n8n: format suggestions\narray for display
+
+note over n8n
+    Array Structure:
+    [\n      "Connect with elite researchers...",\n      "Explore cutting-edge research...",\n      "Be part of groundbreaking..."\n    ]
+end note
+
+n8n ->> django: **POST** http://cos40005_backend:8000/api/core/events/42/apply-suggestion/\n{\n  suggestions: [3 alternatives],\n  refinement_type: "prompt",\n  field_name: "social_post_en"\n}
+
+deactivate n8n
+
+activate django
+
+django ->> django: parse suggestions array
+
+django ->> db: **SELECT** FROM events WHERE id=42
+
+activate db
+db -->> django: Event object + current content
+deactivate db
+
+django ->> django: prepare response:\n{\n  event_id: 42,\n  field_name: "social_post_en",\n  suggestions: [3 options],\n  generation_status: "completed",\n  timestamp: "2026-01-25T14:32:00Z"\n}
+
+django -->> react: **200 OK** {\n  suggestions: [...],\n  generation_status: "completed"\n}
+
+deactivate django
+
+react ->> react: update state with\n3 suggestions\nstop loading spinner\nshow grid cards
+
+react ->> ui: render 3 suggestion\ncards for selection
+
+ui ->> react: clicks card #2\n"Explore cutting-edge research..."
+
+activate react
+
+ui ->> react: clicks "Apply\nSuggestion"
+
+react ->> django: **POST** /api/core/events/42/apply-suggestion/\n{\n  content: "Explore cutting-edge research...",\n  field_name: "social_post_en",\n  type: "prompt"\n}
+
+activate django
+
+django ->> db: **UPDATE** events\nSET generated_content = '{\"social_post_en\": \"Explore cutting-edge...\"}',\ngeneration_status = 'completed',\nlast_generated_at = NOW()\nWHERE id = 42
+
+activate db
+db -->> django: 1 row updated
+deactivate db
+
+django -->> react: **200 OK** {\n  id: 42,\n  generated_content: {...},\n  generation_status: "completed"\n}
+
+deactivate django
+
+react ->> react: update preview panel\nwith applied content
+
+react ->> ui: close Modal\n(optional Auto-close)
+
+ui ->> react: modal closes\nEvent list refreshes
+
+deactivate react
+
+note over ui, db
+    Total Flow Time: ~20-25 seconds
+    (dominated by Groq latency ~15-20s)
+    
+    Immediate Mode (Direct Edit):
+    Same flow but skips Groq
+    Time: <200ms (just DB update)
+end note
+
+@enduml

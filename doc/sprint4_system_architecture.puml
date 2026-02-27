@@ -1,0 +1,90 @@
+@startuml Sprint4_SystemArchitecture
+!define COMPONENT_COLOR #E1F5FF
+!define DATABASE_COLOR #FFF3E0
+!define SERVICE_COLOR #F3E5F5
+!define USER_COLOR #E8F5E9
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+
+title System Architecture - AI-Driven Event Refinement
+
+package "Frontend Layer" {
+    component [React App\n(localhost:3000)] as frontend <<WEB>> #E8F5E9
+    component [EventRefinementChatbot.jsx\n(260 lines)] as chatbot <<COMPONENT>> #E1F5FF
+    component [StaffEventManager.jsx\n(Modal Integration)] as manager <<COMPONENT>> #E1F5FF
+    
+    frontend --> chatbot : renders
+    frontend --> manager : hosts
+}
+
+package "API Gateway & Auth" {
+    component [Django REST Framework\n(Port 8000)] as django <<SERVICE>> #F3E5F5
+    component [JWT SimplJWT\n(Token Auth)] as jwt <<AUTH>> #FFE0B2
+    
+    django --> jwt : validates
+}
+
+package "Business Logic & Endpoints" {
+    component [import_csv()\npermission_classes=[]\nCSV File Upload] as import_ep <<API>> #E1F5FF
+    component [refine_chatbot()\npermission_classes=[IsAuthenticated]\nN8N Router] as refine_ep <<API>> #E1F5FF
+    component [apply_suggestion()\npermission_classes=[IsAuthenticated]\nUpdate Event] as apply_ep <<API>> #E1F5FF
+    
+    django --> import_ep : routes
+    django --> refine_ep : routes
+    django --> apply_ep : routes
+}
+
+package "Orchestration Layer" {
+    component [N8N Workflow Engine\n(Port 5678)] as n8n <<SERVICE>> #F3E5F5
+    component [csv_to_events_pipeline.json\n(✅ Prod Ready)] as csv_workflow <<WORKFLOW>> #E1F5FF
+    component [event_refinement_chatbot.json\n(🔄 In Progress)] as refine_workflow <<WORKFLOW>> #FFE0B2
+    
+    n8n --> csv_workflow : executes
+    n8n --> refine_workflow : executes
+}
+
+package "AI/LLM Integration" {
+    component [Groq API\n(llama-3.3-70b-versatile)] as groq <<EXTERNAL>> #E0F2F1
+    
+    refine_workflow --> groq : calls\n(system prompt for\ncontent generation)
+}
+
+package "Data Layer" {
+    component [PostgreSQL 18\n(Port 5432)] as postgres <<DATABASE>> #FFF3E0
+    component [Event Model\n(ID, Title, Content,\ngenerated_content JSONB,\ngeneration_status)] as events_model <<TABLE>> #FFECB3
+    component [Redis\n(Cache/Queue)] as redis <<CACHE>> #FFE0B2
+    
+    postgres --> events_model : stores
+}
+
+package "Message Queue & State" {
+    component [Event State Store\n(generation_status:\nidle/generating/\ncompleted/failed)] as state <<STATE>> #E1F5FF
+}
+
+' Connection flows
+frontend --> django : HTTP/REST\n(JWT Bearer Token)
+refine_ep --> n8n : webhook POST\n(event_id, refinement_type,\ncontent)
+import_ep --> n8n : internal call\n(CSV import trigger)
+
+n8n --> apply_ep : webhook callback\n(POST apply-suggestion\nwith results)
+
+apply_ep --> postgres : UPDATE Event\ngenerated_content[field]
+refine_ep --> state : sets generation_status
+
+chatbot --> apply_ep : POST /apply-suggestion/
+chatbot --> refine_ep : POST /refine-chatbot/
+manager --> import_ep : POST /import-csv/
+
+state --> postgres : persists
+
+legend right
+    | Component Type |
+    | <#E1F5FF> API Endpoint |
+    | <#F3E5F5> Service |
+    | <#FFF3E0> Database |
+    | <#E8F5E9> Frontend |
+    | <#FFE0B2> In-Progress/External |
+endlegend
+
+@enduml

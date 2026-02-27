@@ -38,7 +38,7 @@ class FormAdmin(admin.ModelAdmin):
 
 @admin.register(models.FormSubmission)
 class FormSubmissionAdmin(admin.ModelAdmin):
-    list_display = ('form', 'submitter', 'submitted_at')
+    list_display = ('form', 'submitter', 'created_at')
 
 
 @admin.register(models.Notification)
