@@ -24,7 +24,7 @@ const WEEKDAY_MAP = {
 
 function findFirstDateOnOrAfter(startDate, weekday) {
   const d = new Date(startDate);
-  const target = weekday; // 0-6 (Sun-Sat)
+  const target = weekday;
   const diff = (target - d.getDay() + 7) % 7;
   d.setDate(d.getDate() + diff);
   return d;
@@ -32,7 +32,6 @@ function findFirstDateOnOrAfter(startDate, weekday) {
 
 function parseNotesForMeeting(notes) {
   if (!notes) return null;
-  // notes format from seeder: "Class 3h/week; Mon 09:00"
   const parts = notes.split(';').map(p => p.trim());
   const dayTime = parts.find(p => /\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\b/.test(p));
   if (!dayTime) return null;
@@ -58,7 +57,7 @@ export default function CalendarPage() {
   const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
-  const resp = await api.get('/enrollment/enrollments/dashboard/');
+      const resp = await api.get('/enrollment/enrollments/dashboard/');
       const enrollments = resp.data || [];
 
       const semesterStart = new Date('2025-01-05');
@@ -72,15 +71,14 @@ export default function CalendarPage() {
         const unit = offering.unit || {};
         const notes = offering.notes || '';
         const mt = parseNotesForMeeting(notes);
-        if (!mt) return; // skip if no schedule metadata
+        if (!mt) return;
 
         const weekdayName = mt.day;
-        const time = mt.time; // HH:MM
+        const time = mt.time;
         const weekday = WEEKDAY_MAP[weekdayName];
         if (weekday === undefined) return;
 
         const first = findFirstDateOnOrAfter(semesterStart, weekday);
-        // set time
         const [hh, mm] = (time || '09:00').split(':').map(x => parseInt(x, 10));
         first.setHours(hh || 9, mm || 0, 0, 0);
 
@@ -114,35 +112,58 @@ export default function CalendarPage() {
     loadEvents();
   }, [loadEvents]);
 
-  if (loading) return <div>Loading calendar...</div>;
+  if (loading) {
+    return (
+      <section className="stack">
+        <p className="lead">Loading calendar...</p>
+      </section>
+    );
+  }
 
   return (
-    <div>
-      <h2>Student Calendar (12-week blocks starting 2025-01-05)</h2>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div style={{ color: '#666' }}>Showing 12-week blocks starting 2025-01-05</div>
-        <div>
-          <button onClick={loadEvents} style={{ marginRight: 8 }}>Refresh</button>
-          <span style={{ fontSize: 12, color: '#666' }}>{lastLoadedAt ? `Last updated ${lastLoadedAt.toLocaleTimeString()}` : ''}</span>
+    <section className="stack">
+      <div className="breadcrumb">Home / <strong>Calendar</strong></div>
+      <h1 className="page-h1">Student Calendar</h1>
+
+      <div className="calendar-toolbar">
+        <span className="calendar-meta">12-week blocks starting 2025-01-05</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button className="btn" onClick={loadEvents}>Refresh</button>
+          <span className="calendar-meta">
+            {lastLoadedAt ? `Last updated ${lastLoadedAt.toLocaleTimeString()}` : ''}
+          </span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 14, height: 14, background: '#2e7d32', display: 'inline-block', borderRadius: 3 }} /> Core</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 14, height: 14, background: '#1565c0', display: 'inline-block', borderRadius: 3 }} /> Major</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 14, height: 14, background: '#6a1b9a', display: 'inline-block', borderRadius: 3 }} /> Elective</div>
+      <div className="legend">
+        <div className="legend-item">
+          <span className="legend-dot" style={{ background: '#2e7d32' }} />
+          Core
+        </div>
+        <div className="legend-item">
+          <span className="legend-dot" style={{ background: '#1565c0' }} />
+          Major
+        </div>
+        <div className="legend-item">
+          <span className="legend-dot" style={{ background: '#6a1b9a' }} />
+          Elective
+        </div>
       </div>
 
-      {events.length === 0 && <div style={{ marginBottom: 12, color: '#666' }}>No scheduled enrolments found — showing empty calendar.</div>}
+      {events.length === 0 && (
+        <div className="alert alert-info">No scheduled enrolments found — showing empty calendar.</div>
+      )}
 
-      <FullCalendar
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
-        initialDate="2025-01-05"
-        headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
-        events={events}
-        height="auto"
-      />
-    </div>
+      <div className="calendar-wrapper">
+        <FullCalendar
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          initialDate="2025-01-05"
+          headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
+          events={events}
+          height="auto"
+        />
+      </div>
+    </section>
   );
 }

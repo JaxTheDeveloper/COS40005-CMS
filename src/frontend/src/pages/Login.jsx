@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { Box, Container, TextField, Button, Typography, Paper } from '@mui/material';
 import { authService } from '../services/auth';
 
 const validationSchema = Yup.object({
@@ -29,7 +28,6 @@ export default function Login({ onLogin }) {
     onSubmit: async (values, { setSubmitting, setErrors }) => {
       try {
         const user = await authService.login(values.email, values.password);
-        // Notify App.jsx that we have a logged-in user
         if (onLogin) onLogin(user);
         navigate('/dashboard/compsci');
       } catch (error) {
@@ -43,67 +41,62 @@ export default function Login({ onLogin }) {
   });
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          mt: 8, 
-          p: 4, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center' 
-        }}
-      >
-        <Typography component="h1" variant="h5">
-          Sign in
-        </Typography>
-        <Box component="form" onSubmit={formik.handleSubmit} noValidate sx={{ mt: 1 }}>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Email Address"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={formik.values.email}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={(formik.touched.email || formik.submitCount > 0) && Boolean(formik.errors.email)}
-            helperText={(formik.touched.email || formik.submitCount > 0) && formik.errors.email}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Password"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={formik.values.password}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={(formik.touched.password || formik.submitCount > 0) && Boolean(formik.errors.password)}
-            helperText={(formik.touched.password || formik.submitCount > 0) && formik.errors.password}
-          />
+    <div className="login-wrapper">
+      <div className="login-card">
+        <h1>Sign in</h1>
+        <form onSubmit={formik.handleSubmit} noValidate>
+          <div className="form-field">
+            <label htmlFor="email">Email Address *</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              autoComplete="email"
+              autoFocus
+              placeholder="you@swin.edu.au"
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              style={(formik.touched.email || formik.submitCount > 0) && formik.errors.email ? { borderColor: '#c62828' } : {}}
+            />
+            {(formik.touched.email || formik.submitCount > 0) && formik.errors.email && (
+              <span className="form-error">{formik.errors.email}</span>
+            )}
+          </div>
+          <div className="form-field">
+            <label htmlFor="password">Password *</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              autoComplete="current-password"
+              placeholder="••••••••"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              style={(formik.touched.password || formik.submitCount > 0) && formik.errors.password ? { borderColor: '#c62828' } : {}}
+            />
+            {(formik.touched.password || formik.submitCount > 0) && formik.errors.password && (
+              <span className="form-error">{formik.errors.password}</span>
+            )}
+          </div>
           {formik.errors.submit && (
-            <Typography color="error" variant="body2" sx={{ mt: 2 }}>
+            <div className="alert alert-error" style={{ marginTop: '1rem' }}>
               {formik.errors.submit}
-            </Typography>
+            </div>
           )}
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-            disabled={formik.isSubmitting}
-          >
-            Sign In
-          </Button>
-        </Box>
-      </Paper>
-    </Container>
+          <div className="form-actions">
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={formik.isSubmitting}
+              style={{ width: '100%' }}
+            >
+              {formik.isSubmitting ? 'Signing in…' : 'Sign In'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

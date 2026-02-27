@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Avatar, Button, TextField } from '@mui/material';
 import { authService } from '../services/auth';
 
 export default function Profile() {
@@ -34,33 +33,63 @@ export default function Profile() {
     }
   };
 
-  if (loading) return <Box p={3}>Loading...</Box>;
+  if (loading) {
+    return (
+      <section className="stack">
+        <p className="lead">Loading...</p>
+      </section>
+    );
+  }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>Profile</Typography>
-      <Box display="flex" alignItems="center" mb={3}>
-        <Avatar src={user?.profile_image} alt={user?.email} sx={{ width: 72, height: 72, mr: 2 }} />
-        <Box>
-          <Typography variant="h6">{user?.first_name} {user?.last_name}</Typography>
-          <Typography color="textSecondary">{user?.email}</Typography>
-        </Box>
-      </Box>
+    <section className="stack">
+      <div className="breadcrumb">Home / <strong>Profile</strong></div>
+      <h1 className="page-h1">Profile</h1>
+
+      <div className="profile-header">
+        {user?.profile_image ? (
+          <img className="profile-avatar" src={user.profile_image} alt={user?.email} />
+        ) : (
+          <div className="profile-avatar-placeholder">👤</div>
+        )}
+        <div className="profile-info">
+          <div className="profile-name">{user?.first_name} {user?.last_name}</div>
+          <div className="profile-email">{user?.email}</div>
+        </div>
+      </div>
 
       {editing ? (
-        <Box sx={{ maxWidth: 480 }}>
-          <TextField fullWidth label="First name" name="first_name" value={form.first_name} onChange={handleChange} margin="normal" />
-          <TextField fullWidth label="Last name" name="last_name" value={form.last_name} onChange={handleChange} margin="normal" />
-          <Box mt={2}>
-            <Button variant="contained" color="primary" onClick={handleSave} sx={{ mr: 1 }}>Save</Button>
-            <Button variant="outlined" onClick={() => setEditing(false)}>Cancel</Button>
-          </Box>
-        </Box>
+        <div className="query-form" style={{ maxWidth: 480 }}>
+          <div className="form-field">
+            <label htmlFor="first_name">First name</label>
+            <input
+              type="text"
+              id="first_name"
+              name="first_name"
+              value={form.first_name}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="form-field">
+            <label htmlFor="last_name">Last name</label>
+            <input
+              type="text"
+              id="last_name"
+              name="last_name"
+              value={form.last_name}
+              onChange={handleChange}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+            <button className="btn btn-primary" onClick={handleSave}>Save</button>
+            <button className="btn" onClick={() => setEditing(false)}>Cancel</button>
+          </div>
+        </div>
       ) : (
-        <Box>
-          <Button variant="contained" onClick={() => setEditing(true)}>Edit profile</Button>
-        </Box>
+        <div>
+          <button className="btn btn-primary" onClick={() => setEditing(true)}>Edit profile</button>
+        </div>
       )}
-    </Box>
+    </section>
   );
 }

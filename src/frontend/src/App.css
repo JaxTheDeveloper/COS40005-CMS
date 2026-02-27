@@ -120,15 +120,15 @@
   height: 48px;
   border-radius: 50%;
   background: var(--light-gradient);
-  border: 2px solid rgba(102, 126, 234, 0.3);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.15);
+  border: 2px solid rgba(33, 150, 243, 0.3);
+  box-shadow: 0 0 20px rgba(33, 150, 243, 0.15);
   transition: all var(--transition-base);
   cursor: pointer;
 }
 
 .avatar-placeholder:hover {
   border-color: var(--primary);
-  box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 0 30px rgba(33, 150, 243, 0.3);
   transform: scale(1.05);
 }
 
@@ -189,9 +189,9 @@
 }
 
 .sidebar-btn:hover .sidebar-icon {
-  color: var(--primary, #667eea);
+  color: var(--primary, #2196f3);
   transform: scale(1.15);
-  filter: drop-shadow(0 0 6px rgba(102, 126, 234, 0.5));
+  filter: drop-shadow(0 0 6px rgba(33, 150, 243, 0.5));
 }
 
 .sidebar-label {

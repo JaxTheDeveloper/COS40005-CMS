@@ -1,30 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Alert,
-  CircularProgress,
-  Chip,
-  Button,
-  IconButton,
-} from '@mui/material';
-import {
-  Close as CloseIcon,
-  CheckCircle as CheckCircleIcon,
-  Info as InfoIcon,
-  Warning as WarningIcon,
-  EventNote as EventNoteIcon,
-} from '@mui/icons-material';
 import { api } from '../services/api';
 
 const notificationTypeIcons = {
-  attendance: <CheckCircleIcon sx={{ color: '#4caf50' }} />,
-  fees: <WarningIcon sx={{ color: '#ff9800' }} />,
-  event: <EventNoteIcon sx={{ color: '#2196f3' }} />,
-  disciplinary: <WarningIcon sx={{ color: '#f44336' }} />,
+  attendance: '✅',
+  fees: '⚠️',
+  event: '📅',
+  disciplinary: '🚨',
 };
 
 export default function StudentNotifications() {
@@ -41,19 +22,16 @@ export default function StudentNotifications() {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Load private events (unit-scoped or staff notifications)
       const eventsResponse = await api.get('/core/events/');
       const filteredEvents = eventsResponse.data.filter(
         (event) => event.visibility !== 'public'
       );
       setEvents(filteredEvents);
 
-      // Load system notifications
       try {
         const notifResponse = await api.get('/core/notifications/');
         setNotifications(notifResponse.data);
       } catch (e) {
-        // Notifications endpoint may not exist yet
         console.log('Notifications endpoint not available');
       }
 
@@ -117,146 +95,116 @@ export default function StudentNotifications() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-        <CircularProgress />
-      </Box>
+      <section className="stack">
+        <p className="lead">Loading...</p>
+      </section>
     );
   }
 
-  return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h5" gutterBottom>
-        Notifications & Events
-      </Typography>
+  const unreadCount = notifications.filter((n) => n.unread).length;
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+  return (
+    <section className="stack">
+      <div className="breadcrumb">Home / <strong>Notifications</strong></div>
+      <h1 className="page-h1">Notifications & Events</h1>
+
+      {error && <div className="alert alert-error">{error}</div>}
 
       {/* Filter Chips */}
-      <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        <Chip
-          label="All"
+      <div className="chip-row">
+        <button
+          className={`chip ${filterType === 'all' ? 'active' : ''}`}
           onClick={() => setFilterType('all')}
-          variant={filterType === 'all' ? 'filled' : 'outlined'}
-          color={filterType === 'all' ? 'primary' : 'default'}
-        />
-        <Chip
-          label={`Unread (${notifications.filter((n) => n.unread).length})`}
+        >
+          All
+        </button>
+        <button
+          className={`chip ${filterType === 'unread' ? 'active' : ''}`}
           onClick={() => setFilterType('unread')}
-          variant={filterType === 'unread' ? 'filled' : 'outlined'}
-          color={filterType === 'unread' ? 'primary' : 'default'}
-        />
-        <Chip
-          label={`Events (${events.length})`}
+        >
+          Unread ({unreadCount})
+        </button>
+        <button
+          className={`chip ${filterType === 'events' ? 'active' : ''}`}
           onClick={() => setFilterType('events')}
-          variant={filterType === 'events' ? 'filled' : 'outlined'}
-          color={filterType === 'events' ? 'primary' : 'default'}
-        />
-        <Chip
-          label={`Notifications (${notifications.length})`}
+        >
+          Events ({events.length})
+        </button>
+        <button
+          className={`chip ${filterType === 'notifications' ? 'active' : ''}`}
           onClick={() => setFilterType('notifications')}
-          variant={filterType === 'notifications' ? 'filled' : 'outlined'}
-          color={filterType === 'notifications' ? 'primary' : 'default'}
-        />
-      </Box>
+        >
+          Notifications ({notifications.length})
+        </button>
+      </div>
 
       {/* Items List */}
       {filteredItems.length === 0 ? (
-        <Alert severity="info">No notifications or events to display</Alert>
+        <div className="alert alert-info">No notifications or events to display</div>
       ) : (
-        <Grid container spacing={2}>
+        <div className="notif-list">
           {filteredItems.map((item) => {
             const isNotification = item.type === 'notification';
             const data = item.data;
 
             if (isNotification) {
               return (
-                <Grid item xs={12} key={item.id}>
-                  <Card
-                    sx={{
-                      backgroundColor: data.unread ? '#f5f5f5' : '#fafafa',
-                      borderLeft: `4px solid ${
-                        data.unread ? '#2196f3' : '#ccc'
-                      }`,
-                    }}
-                  >
-                    <CardContent sx={{ position: 'relative', pb: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
-                        <Box sx={{ mr: 1, mt: 0.5 }}>
-                          {notificationTypeIcons[data.verb?.split('_')[0]] ||
-                            <InfoIcon />}
-                        </Box>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle1" fontWeight="bold">
-                            {data.verb}
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {data.description || 'No description'}
-                          </Typography>
-                        </Box>
-                        <IconButton
-                          size="small"
-                          onClick={() => dismissEvent(data.id)}
-                          sx={{ ml: 1 }}
+                <div
+                  key={item.id}
+                  className={`notif-card ${data.unread ? 'unread' : 'read'}`}
+                >
+                  <div className="notif-icon">
+                    {notificationTypeIcons[data.verb?.split('_')[0]] || 'ℹ️'}
+                  </div>
+                  <div className="notif-body">
+                    <div className="notif-title">{data.verb}</div>
+                    <div className="notif-text">
+                      {data.description || 'No description'}
+                    </div>
+                    <div className="notif-meta">
+                      <span className="notif-time">
+                        {new Date(data.created_at).toLocaleString()}
+                      </span>
+                      {data.unread && (
+                        <button
+                          className="btn"
+                          style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+                          onClick={() => markAsRead(data.id)}
                         >
-                          <CloseIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                      <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                        <Typography variant="caption" color="textSecondary">
-                          {new Date(data.created_at).toLocaleString()}
-                        </Typography>
-                        {data.unread && (
-                          <Button
-                            size="small"
-                            onClick={() => markAsRead(data.id)}
-                          >
-                            Mark as read
-                          </Button>
-                        )}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                          Mark as read
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <button className="notif-dismiss" onClick={() => dismissEvent(data.id)}>
+                    ✕
+                  </button>
+                </div>
               );
             } else {
               // Event card
               return (
-                <Grid item xs={12} key={item.id}>
-                  <Card sx={{ borderLeft: `4px solid #2196f3` }}>
-                    <CardContent sx={{ position: 'relative', pb: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle1" fontWeight="bold">
-                            {data.title}
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                            {data.description}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            📅 {new Date(data.start).toLocaleString()} |{' '}
-                            📍 {data.location || 'Online'}
-                          </Typography>
-                          <br />
-                          <Typography variant="caption" color="textSecondary">
-                            Visibility: <Chip label={data.visibility} size="small" sx={{ ml: 1 }} />
-                          </Typography>
-                        </Box>
-                        <IconButton
-                          size="small"
-                          onClick={() => dismissEvent(data.id)}
-                          sx={{ ml: 1 }}
-                        >
-                          <CloseIcon fontSize="small" />
-                        </IconButton>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <div key={item.id} className="notif-card">
+                  <div className="notif-icon">📅</div>
+                  <div className="notif-body">
+                    <div className="notif-title">{data.title}</div>
+                    <div className="notif-text">{data.description}</div>
+                    <div className="notif-meta">
+                      <span className="notif-time">
+                        📅 {new Date(data.start).toLocaleString()} | 📍 {data.location || 'Online'}
+                      </span>
+                      <span className="badge badge-info">{data.visibility}</span>
+                    </div>
+                  </div>
+                  <button className="notif-dismiss" onClick={() => dismissEvent(data.id)}>
+                    ✕
+                  </button>
+                </div>
               );
             }
           })}
-        </Grid>
+        </div>
       )}
-    </Box>
+    </section>
   );
 }

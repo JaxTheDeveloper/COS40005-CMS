@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Grid, Card, CardContent } from '@mui/material';
 import { api } from '../services/api';
 
 export default function Events() {
@@ -11,7 +10,7 @@ export default function Events() {
   useEffect(() => {
     (async () => {
       try {
-  const resp = await api.get('/core/events/');
+        const resp = await api.get('/core/events/');
         setEvents(resp.data);
       } catch (err) {
         console.error('Failed to load events', err);
@@ -22,52 +21,88 @@ export default function Events() {
     })();
   }, []);
 
-  if (loading) return <Box p={3}>Loading events...</Box>;
-  if (error) return <Box p={3} color="error.main">{error}</Box>;
+  if (loading) {
+    return (
+      <section className="stack">
+        <p className="lead">Loading events...</p>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="stack">
+        <div className="alert alert-error">{error}</div>
+      </section>
+    );
+  }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>Public events</Typography>
-      <Grid container spacing={3}>
-        {events.map((ev) => (
-          <Grid item xs={12} md={6} key={ev.id}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6">{ev.title}</Typography>
-                <Typography color="textSecondary">{new Date(ev.start_time).toLocaleString()} — {ev.location}</Typography>
-                <Typography mt={1}>{ev.description}</Typography>
-                <Box mt={2}>
-                  {ev.generation_status === 'ready' ? (
-                    <Box>
-                      <Typography variant="subtitle1">Generated content</Typography>
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>{ev.generated_content?.social_post}</Typography>
-                      <Typography variant="caption" display="block">Tone: {ev.generation_meta?.tone} • Brand score: {ev.generation_meta?.brand_score}</Typography>
-                    </Box>
-                  ) : (
-                    <Box>
-                      <button
-                        onClick={async () => {
-                          try {
-                            setGenerating(ev.id);
-                            const res = await api.post(`/api/core/events/${ev.id}/generate_content/`, { prompt: `Generate multi-channel content for ${ev.title}` });
-                            // Update local state
-                            setEvents((prev) => prev.map(e => e.id === ev.id ? { ...e, generated_content: res.data.generated_content, generation_meta: res.data.generation_meta, generation_status: 'ready', last_generated_at: new Date().toISOString() } : e));
-                          } catch (err) {
-                            console.error('Generation failed', err);
-                          } finally {
-                            setGenerating(null);
-                          }
-                        }}
-                        disabled={generating === ev.id}
-                      >{generating === ev.id ? 'Generating…' : 'Generate content'}</button>
-                    </Box>
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
+    <section className="stack">
+      <div className="breadcrumb">Home / <strong>Events</strong></div>
+      <h1 className="page-h1">Public Events</h1>
+
+      {events.length === 0 ? (
+        <div className="alert alert-info">No events available</div>
+      ) : (
+        <div className="card-grid">
+          {events.map((ev) => (
+            <div className="event-card" key={ev.id}>
+              <div className="event-card-title">{ev.title}</div>
+              <div className="event-card-detail">
+                {new Date(ev.start_time).toLocaleString()} — {ev.location}
+              </div>
+              <p className="news-text">{ev.description}</p>
+
+              {ev.generation_status === 'ready' ? (
+                <div className="event-card-content">
+                  <div className="icon-card-title">Generated content</div>
+                  <p className="news-text" style={{ whiteSpace: 'pre-wrap', marginTop: '0.5rem' }}>
+                    {ev.generated_content?.social_post}
+                  </p>
+                  <div className="event-card-meta">
+                    Tone: {ev.generation_meta?.tone} • Brand score: {ev.generation_meta?.brand_score}
+                  </div>
+                </div>
+              ) : (
+                <div className="unit-actions">
+                  <button
+                    className="btn btn-primary"
+                    onClick={async () => {
+                      try {
+                        setGenerating(ev.id);
+                        const res = await api.post(`/api/core/events/${ev.id}/generate_content/`, {
+                          prompt: `Generate multi-channel content for ${ev.title}`
+                        });
+                        setEvents((prev) =>
+                          prev.map((e) =>
+                            e.id === ev.id
+                              ? {
+                                  ...e,
+                                  generated_content: res.data.generated_content,
+                                  generation_meta: res.data.generation_meta,
+                                  generation_status: 'ready',
+                                  last_generated_at: new Date().toISOString(),
+                                }
+                              : e
+                          )
+                        );
+                      } catch (err) {
+                        console.error('Generation failed', err);
+                      } finally {
+                        setGenerating(null);
+                      }
+                    }}
+                    disabled={generating === ev.id}
+                  >
+                    {generating === ev.id ? 'Generating…' : 'Generate content'}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

@@ -1,4 +1,4 @@
-
+import { Agentation } from "agentation";
 
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -73,7 +73,7 @@ export default function App() {
       <footer className="footer">
         © {new Date().getFullYear()} Swinburne VN (demo)
       </footer>
-      
+      {process.env.NODE_ENV === "development" && <Agentation />}
     </div>
   );
 }

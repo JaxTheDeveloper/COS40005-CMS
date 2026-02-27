@@ -1,18 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper
-} from '@mui/material';
 import { api } from '../services/api';
 
 export default function SocialGold() {
@@ -28,11 +14,11 @@ export default function SocialGold() {
   const loadSocialGoldData = async () => {
     try {
       const [goldResponse, transactionsResponse] = await Promise.all([
-  api.get('/social/social-gold/'),
-  api.get('/social/transactions/')
+        api.get('/social/social-gold/'),
+        api.get('/social/transactions/')
       ]);
       
-      setSocialGold(goldResponse.data[0]); // Assuming user has one social gold record
+      setSocialGold(goldResponse.data[0]);
       setTransactions(transactionsResponse.data);
       setError(null);
     } catch (err) {
@@ -43,66 +29,70 @@ export default function SocialGold() {
     }
   };
 
-  if (loading) return <Box>Loading...</Box>;
-  if (error) return <Box color="error.main">{error}</Box>;
+  if (loading) {
+    return (
+      <section className="stack">
+        <p className="lead">Loading...</p>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="stack">
+        <div className="alert alert-error">{error}</div>
+      </section>
+    );
+  }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>Social Gold</Typography>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>Current Balance</Typography>
-              <Typography variant="h3" color="primary">
-                {socialGold?.current_balance || 0}
-              </Typography>
-              <Typography color="textSecondary">
-                Lifetime earned: {socialGold?.lifetime_earned || 0}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+    <section className="stack">
+      <div className="breadcrumb">Home / <strong>Social Gold</strong></div>
+      <h1 className="page-h1">Social Gold</h1>
 
-      <Box mt={4}>
-        <Typography variant="h5" gutterBottom>Transaction History</Typography>
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Amount</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell>Awarded By</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell>
-                    {new Date(transaction.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>{transaction.transaction_type}</TableCell>
-                  <TableCell
-                    sx={{
-                      color: transaction.amount >= 0 ? 'success.main' : 'error.main'
-                    }}
-                  >
+      <div className="stat-grid">
+        <div className="stat-card">
+          <div className="stat-label">Current Balance</div>
+          <div className="stat-value">{socialGold?.current_balance || 0}</div>
+          <div className="stat-sub">Lifetime earned: {socialGold?.lifetime_earned || 0}</div>
+        </div>
+      </div>
+
+      <h3 className="subheading">Transaction History</h3>
+      <div className="table-wrapper">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Reason</th>
+              <th>Awarded By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions.length === 0 ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+                  No transactions found
+                </td>
+              </tr>
+            ) : (
+              transactions.map((transaction) => (
+                <tr key={transaction.id}>
+                  <td>{new Date(transaction.created_at).toLocaleDateString()}</td>
+                  <td>{transaction.transaction_type}</td>
+                  <td className={transaction.amount >= 0 ? 'text-positive' : 'text-negative'}>
                     {transaction.amount >= 0 ? '+' : ''}{transaction.amount}
-                  </TableCell>
-                  <TableCell>{transaction.reason}</TableCell>
-                  <TableCell>
-                    {transaction.awarded_by?.email || 'System'}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-    </Box>
+                  </td>
+                  <td>{transaction.reason}</td>
+                  <td>{transaction.awarded_by?.email || 'System'}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
