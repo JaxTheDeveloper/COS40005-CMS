@@ -19,7 +19,7 @@ import {
 import SendIcon from '@mui/icons-material/Send';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import api from '../services/api';
+import { api } from '../services/api';
 
 export default function EventRefinementChatbot({ eventId, onClose, onPublish }) {
   const [tabValue, setTabValue] = useState(0);
