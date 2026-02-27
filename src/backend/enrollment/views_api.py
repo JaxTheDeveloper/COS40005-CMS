@@ -9,9 +9,10 @@ from django.db.models import Q
 
 from .models import Enrollment, Transcript
 from .serializers import EnrollmentSerializer, EnrollmentCreateSerializer, TranscriptSerializer
-from src.backend.academic.models import SemesterOffering
+from src.backend.academic.models import SemesterOffering, CourseUnit
 from src.backend.academic.serializers import SemesterOfferingSerializer
 from src.backend.core.models import Session, AttendanceRecord
+
 
 
 class EnrollmentViewSet(viewsets.ModelViewSet):
@@ -87,15 +88,61 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
         enrolled_unit_ids = set(
             enrollments.values_list('offering__unit_id', flat=True)
         )
-        
+
+        # ── Major-based filtering ─────────────────────────────────────────────
+        # Determine student's course (major) from StudentProfile, if any.
+        student_course = None
+        try:
+            from src.backend.users.models import StudentProfile
+            profile = StudentProfile.objects.select_related('course').get(user=user)
+            student_course = profile.course
+        except Exception:
+            pass
+
+        # Build sets for efficient lookup
+        # course_unit_ids  → unit IDs that belong to the student's course
+        # elective_unit_ids → unit IDs marked as elective on *any* course
+        course_unit_ids = None   # None means "no restriction"
+        elective_unit_ids = set()
+
+        if student_course:
+            cu_qs = CourseUnit.objects.filter(course=student_course).values_list('unit_id', 'is_elective')
+            course_unit_ids = set()
+            for unit_id, is_elec in cu_qs:
+                course_unit_ids.add(unit_id)
+
+        # Also collect elective unit IDs across all courses
+        elective_unit_ids = set(
+            CourseUnit.objects.filter(is_elective=True).values_list('unit_id', flat=True)
+        )
+
         # Get available offerings (not enrolled, active, enrollment period open)
-        available_offerings = SemesterOffering.objects.filter(
+        available_offerings_qs = SemesterOffering.objects.filter(
             is_active=True,
             enrollment_start__lte=now,
             enrollment_end__gte=now
         ).exclude(
             unit_id__in=enrolled_unit_ids
         ).select_related('unit').order_by('unit__code')
+
+        if course_unit_ids is not None:
+            # Student has a major: show units in their course OR any elective unit
+            available_offerings_qs = available_offerings_qs.filter(
+                Q(unit_id__in=course_unit_ids) | Q(unit_id__in=elective_unit_ids)
+            )
+
+        available_offerings = list(available_offerings_qs)
+
+        # Annotate each offering's unit with _is_elective so UnitSerializer can read it
+        for offering in available_offerings:
+            unit = offering.unit
+            if course_unit_ids is not None:
+                # True if this unit is NOT in their major's required units
+                # (i.e., it's only here because it's a global elective)
+                unit._is_elective = unit.id in elective_unit_ids and unit.id not in (course_unit_ids - elective_unit_ids)
+            else:
+                unit._is_elective = unit.id in elective_unit_ids
+
         
         # Check prerequisites for each available offering
         available_with_prereqs = []

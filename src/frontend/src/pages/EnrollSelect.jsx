@@ -34,15 +34,26 @@ export default function EnrollSelect() {
   const [error, setError] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [confirmOffering, setConfirmOffering] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
   const navigate = useNavigate();
 
   const filteredCards = useMemo(() => {
     const offeringCards = dashboardData?.offering_cards || [];
-    if (statusFilter === 'all') return offeringCards;
-    return offeringCards.filter((card) => card.status_label === statusFilter);
-  }, [dashboardData, statusFilter]);
+    let cards = statusFilter === 'all' ? offeringCards : offeringCards.filter((card) => card.status_label === statusFilter);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      cards = cards.filter((card) => {
+        const unit = card.offering?.unit || {};
+        return (
+          (unit.code || '').toLowerCase().includes(q) ||
+          (unit.name || '').toLowerCase().includes(q)
+        );
+      });
+    }
+    return cards;
+  }, [dashboardData, statusFilter, searchQuery]);
 
   useEffect(() => {
     loadDashboard();
@@ -132,7 +143,12 @@ export default function EnrollSelect() {
             <div className="unit-code">{unit.code}</div>
             <div className="unit-name">{unit.name}</div>
           </div>
-          <span className={`badge ${meta.cls}`}>{meta.label}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+            <span className={`badge ${meta.cls}`}>{meta.label}</span>
+            {unit.is_elective && (
+              <span className="badge badge-default" style={{ fontSize: '0.7rem', opacity: 0.85 }}>Elective</span>
+            )}
+          </div>
         </div>
 
         <div className="unit-detail">
@@ -286,6 +302,26 @@ export default function EnrollSelect() {
         {/* Unit Planner Tab */}
         {tabValue === 0 && (
           <div className="tab-panel">
+            {/* Search bar */}
+            <div style={{ marginBottom: '0.75rem' }}>
+              <input
+                type="search"
+                className="search-input"
+                placeholder="Search by unit code or name…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border, #d1d5db)',
+                  background: 'var(--surface, #fff)',
+                  color: 'inherit',
+                  fontSize: '0.9375rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
             <div className="chip-row" style={{ marginBottom: '1rem' }}>
               {STATUS_FILTERS.map((filter) => (
                 <button

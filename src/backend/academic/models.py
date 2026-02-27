@@ -15,6 +15,12 @@ class Course(BaseModel):
     credit_points = models.IntegerField(default=0)
     department = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
+    units = models.ManyToManyField(
+        'Unit',
+        through='CourseUnit',
+        related_name='courses',
+        blank=True,
+    )
 
     class Meta:
         ordering = ['code']
@@ -50,6 +56,29 @@ class Unit(BaseModel):
                 raise ValidationError('A unit cannot be its own prerequisite.')
             if self in self.anti_requisites.all():
                 raise ValidationError('A unit cannot be its own anti-requisite.')
+
+
+
+class CourseUnit(BaseModel):
+    """
+    Through model linking a Course (major) to a Unit.
+    is_elective=True means the unit can be taken by students of *any* major
+    as an elective (in addition to students of this course).
+    """
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_units')
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='course_units')
+    is_elective = models.BooleanField(
+        default=False,
+        help_text='If true, this unit is available as an elective to students of any major.',
+    )
+
+    class Meta:
+        unique_together = ('course', 'unit')
+        ordering = ['course__code', 'unit__code']
+
+    def __str__(self):
+        tag = ' [Elective]' if self.is_elective else ''
+        return f"{self.course.code} → {self.unit.code}{tag}"
 
 
 class SemesterOffering(BaseModel):

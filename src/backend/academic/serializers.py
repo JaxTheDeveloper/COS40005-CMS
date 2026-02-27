@@ -3,9 +3,16 @@ from .models import Unit, SemesterOffering
 
 
 class UnitSerializer(serializers.ModelSerializer):
+    # is_elective is injected at runtime by the enrollment dashboard when a
+    # student has a major assigned; None means "no major context / unknown".
+    is_elective = serializers.SerializerMethodField()
+
+    def get_is_elective(self, obj):
+        return getattr(obj, '_is_elective', None)
+
     class Meta:
         model = Unit
-        fields = ['id', 'code', 'name', 'description', 'credit_points', 'department', 'convenor']
+        fields = ['id', 'code', 'name', 'description', 'credit_points', 'department', 'convenor', 'is_elective']
 
 
 class SemesterOfferingSerializer(serializers.ModelSerializer):
