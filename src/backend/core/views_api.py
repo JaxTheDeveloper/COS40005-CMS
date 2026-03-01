@@ -661,9 +661,17 @@ class FormSubmissionViewSet(viewsets.ModelViewSet):
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
-    queryset = models.Notification.objects.all().order_by('-created_at')
     serializer_class = serializers.NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # each user only sees notifications addressed to them
+        user = self.request.user
+        return models.Notification.objects.filter(recipient=user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        # actor defaults to current user unless explicitly provided
+        serializer.save(actor=self.request.user)
 
 
 class ResourceViewSet(viewsets.ModelViewSet):

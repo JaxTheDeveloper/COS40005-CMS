@@ -102,4 +102,45 @@ class CoreAPITest(APITestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['title'], 'New Test Ticket')
-        self.assertEqual(response.data['submitter'], self.student_user.id)
+        self.assertEqual(response.data['submitter'], self.student_user.id
+
+    def test_student_send_notification_to_staff(self):
+        """Student should be able to send a notification to staff"""
+        self.client.force_authenticate(user=self.student_user)
+        url = reverse('notification-list')
+        data = {
+            'recipient': self.staff_user.id,
+            'verb': 'question',
+            'description': 'Can I get an extension?'
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['recipient'], self.staff_user.id)
+        self.assertEqual(response.data['actor'], self.student_user.id)
+
+        # now authenticate as staff and confirm they can list it
+        self.client.force_authenticate(user=self.staff_user)
+        list_resp = self.client.get(url)
+        self.assertEqual(list_resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(list_resp.data), 1)
+        self.assertEqual(list_resp.data[0]['verb'], 'question')
+
+    def test_student_cannot_message_student(self):
+        """Student should not be allowed to send notifications to fellow students"""
+        another = User.objects.create_user(
+            username='otherstudent',
+            email='other@example.com',
+            password='pwd',
+            user_type='student'
+        )
+        self.client.force_authenticate(user=self.student_user)
+        url = reverse('notification-list')
+        data = {
+            'recipient': another.id,
+            'verb': 'hello',
+            'description': 'Hi mate'
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('recipient', response.data)
+)

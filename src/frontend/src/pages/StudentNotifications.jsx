@@ -11,6 +11,9 @@ const notificationTypeIcons = {
 export default function StudentNotifications() {
   const [events, setEvents] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [recipients, setRecipients] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [newNotification, setNewNotification] = useState({ recipient: '', verb: '', description: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filterType, setFilterType] = useState('all');
@@ -33,6 +36,17 @@ export default function StudentNotifications() {
         setNotifications(notifResponse.data);
       } catch (e) {
         console.log('Notifications endpoint not available');
+      }
+
+      // load staff/convoc recipients for outgoing messages
+      try {
+        const usersResp = await api.get('/users/');
+        const staffUsers = usersResp.data.filter(
+          (u) => ['staff', 'unit_convenor', 'admin'].includes(u.user_type)
+        );
+        setRecipients(staffUsers);
+      } catch (e) {
+        console.log('Could not load recipients');
       }
 
       setError(null);
@@ -109,6 +123,64 @@ export default function StudentNotifications() {
       <h1 className="page-h1">Notifications & Events</h1>
 
       {error && <div className="alert alert-error">{error}</div>}
+
+      {/* send notification form toggle */}
+      <button className="btn" onClick={() => setShowForm(!showForm)}>
+        {showForm ? 'Cancel' : 'Send Message'}
+      </button>
+
+      {showForm && (
+        <div className="card" style={{ margin: '1rem 0', padding: '1rem' }}>
+          <h3>Send a message to staff</h3>
+          <label>Recipient:</label>
+          <select
+            value={newNotification.recipient}
+            onChange={(e) =>
+              setNewNotification({ ...newNotification, recipient: e.target.value })
+            }
+          >
+            <option value="">-- select --</option>
+            {recipients.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.email} ({r.user_type})
+              </option>
+            ))}
+          </select>
+          <label>Subject (verb):</label>
+          <input
+            type="text"
+            value={newNotification.verb}
+            onChange={(e) =>
+              setNewNotification({ ...newNotification, verb: e.target.value })
+            }
+          />
+          <label>Description:</label>
+          <textarea
+            value={newNotification.description}
+            onChange={(e) =>
+              setNewNotification({ ...newNotification, description: e.target.value })
+            }
+          />
+          <button
+            className="btn btn-primary"
+            onClick={async () => {
+              try {
+                const resp = await api.post('/core/notifications/', newNotification);
+                // don't add to local list since sender isn't the recipient
+                setShowForm(false);
+                setNewNotification({ recipient: '', verb: '', description: '' });
+                // optionally reload notifications so we show any new incoming ones
+                loadData();
+              } catch (err) {
+                console.error(err);
+                setError('Failed to send message');
+              }
+            }}
+          >
+            Send
+          </button>
+        </div>
+      )}
 
       {/* Filter Chips */}
       <div className="chip-row">

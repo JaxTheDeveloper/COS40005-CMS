@@ -74,6 +74,14 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = models.Notification
         fields = '__all__'
 
+    def validate_recipient(self, value):
+        """If actor is a regular student, only allow staff/convon/admin recipients."""
+        actor = getattr(self.context.get('request'), 'user', None)
+        if actor and actor.user_type == 'student':
+            if value.user_type not in ['staff', 'unit_convenor', 'admin']:
+                raise serializers.ValidationError('Students may only send messages to staff or convenors.')
+        return value
+
 
 class ResourceSerializer(serializers.ModelSerializer):
     class Meta:

@@ -40,6 +40,53 @@ docker exec -it cos40005_backend python manage.py seed_student_demo refresh
 - Filters notifications by recipient (current user)
 - Supports mark as read via PATCH
 
+### 4. Enrollment Status Notifications (New)
+Staff actions that change a student's enrollment now trigger a notification record:
+
+- A Django signal (`post_save`) on `Enrollment` watches for status transitions
+  to **ENROLLED** or **WITHDRAWN** (including when created in that state).
+- When detected, a `Notification` is created for the `Enrollment.student` with
+  the verb set to `'Enrollment enrolled'` or `'Enrollment withdrawn'` and the
+  enrollment instance as the `target`.
+- This addresses *Gap 4* from the review: previously approvals did not inform
+  students.
+
+No database migration was required since the notification model already existed.
+
+Example test coverage can be found in `src/backend/enrollment/tests.py`.
+
+### 5. Student-to-Staff Messaging (New)
+Students can now compose and send arbitrary messages to administrative staff
+or unit convenors directly from the notifications page:
+
+- The `/notifications` page renders a **"Send Message"** button which toggles
+  a simple form.
+- Recipients are restricted to users with `user_type` of `staff`,
+  `unit_convenor` or `admin`.  The backend enforces this rule with serializer
+  validation.
+- When sent, the notification appears in the recipient's notifications feed and
+  is visible to staff when they visit the same `/notifications` route.
+- Staff and students both use the same page; the form is only shown when a user
+  has at least one eligible recipient (i.e. not for staff-only accounts).
+
+API behaviour:
+```http
+POST /api/core/notifications/
+{
+  "recipient": 5,
+  "verb": "question",
+  "description": "Can I get an extension?"
+}
+```
+
+Server-side safeguards include:
+- Queryset filtering so users only see notifications addressed to them.
+- `perform_create` sets `actor` to the sender.
+- Serializer rejects student→student messages.
+
+See the new tests under `src/backend/core/tests.py` for examples.
+
+
 ## Frontend Implementation
 
 ### 1. Staff Event Manager Page
