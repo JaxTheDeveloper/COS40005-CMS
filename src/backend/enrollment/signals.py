@@ -67,24 +67,52 @@ def enrollment_pre_save(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Enrollment)
 def enrollment_post_save(sender, instance, created, **kwargs):
-    """Notify student when enrollment becomes active or withdrawn."""
+    """Notify students and staff about relevant status changes.
+
+    * When a record is created with status PENDING, send a notification to the
+      responsible staff/convenor so they know an approval is required.
+    * When the status later flips to ENROLLED or WITHDRAWN, notify the student.
+    """
     new_status = instance.status
     old_status = getattr(instance, '_old_status', None)
 
-    should_notify = False
+    # first handle newly-created pending enrollments
+    if created and new_status == 'PENDING':
+        # determine recipients: unit convenor plus all staff users
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        recipients = set(User.objects.filter(is_staff=True))
+        convenor = None
+        try:
+            convenor = instance.offering.unit.convenor
+        except Exception:
+            convenor = None
+        if convenor:
+            recipients.add(convenor)
+
+        for r in recipients:
+            Notification.objects.create(
+                recipient=r,
+                verb='Enrollment pending approval',
+                target_content_type=ContentType.objects.get_for_model(instance),
+                target_object_id=instance.pk,
+            )
+        # continue on to student notifications if appropriate
+
+    # then handle student-facing notifications (approve/withdrawn)
+    should_notify_student = False
     if created and new_status in ['ENROLLED', 'WITHDRAWN']:
-        should_notify = True
+        should_notify_student = True
     if not created and new_status != old_status and new_status in ['ENROLLED', 'WITHDRAWN']:
-        should_notify = True
+        should_notify_student = True
 
-    if not should_notify:
-        return
-
-    verb = f"Enrollment {new_status.lower()}"
-    Notification.objects.create(
-        recipient=instance.student,
-        verb=verb,
-        target_content_type=ContentType.objects.get_for_model(instance),
-        target_object_id=instance.pk,
-    )
+    if should_notify_student:
+        verb = f"Enrollment {new_status.lower()}"
+        Notification.objects.create(
+            recipient=instance.student,
+            verb=verb,
+            target_content_type=ContentType.objects.get_for_model(instance),
+            target_object_id=instance.pk,
+        )
 

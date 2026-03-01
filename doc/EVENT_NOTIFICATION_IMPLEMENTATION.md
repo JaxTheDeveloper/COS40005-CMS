@@ -86,6 +86,26 @@ Server-side safeguards include:
 
 See the new tests under `src/backend/core/tests.py` for examples.
 
+### 6. Enrollment Request Alerts (New)
+When a student submits a new enrollment (which starts in **PENDING** status),
+staff are now automatically alerted:
+
+- A post‑save signal on `Enrollment` picks up newly created records with
+  `status='PENDING'`.
+- Notifications are sent to:
+  1. the **unit convenor** of the offering (if one exists) and
+  2. all users with `is_staff=True`.
+- The verb used is `'Enrollment pending approval'` and the target is the
+  enrollment instance itself.
+
+This ensures that the people responsible for approving enrollments can see
+requests in their notification feed without manually polling the dashboard.
+
+The behaviour is covered by new tests in
+`src/backend/enrollment/tests.py` and requires no additional database
+schema changes.  It completes the approval workflow by closing the loop on
+student registrations.
+
 
 ## Frontend Implementation
 

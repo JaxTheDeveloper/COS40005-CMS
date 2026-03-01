@@ -61,6 +61,28 @@ Notes:
 - `npm start` (react-scripts) runs the dev server on port 3000 by default. If port 3000 is taken, it will prompt to use another port.
 - Run the frontend in a separate terminal so both front and back run concurrently (non-blocking).
 
+## MCP Server (Agentation tools)
+
+A lightweight HTTP process exposes CMS actions to the Agentation widget used
+in development. It is implemented in `tools/mcp_server.py` and can be started
+either manually or via Docker Compose.
+
+To run alongside the rest of your stack:
+
+```powershell
+docker-compose -f docker-compose-dev.yaml up -d mcp
+```
+
+Or launch directly in the backend container/venv:
+
+```powershell
+python tools/mcp_server.py
+```
+
+The server listens on port **8001** and provides endpoints such as
+`/get_student_profile` and `/award_social_gold`. See `doc/MCP_SERVER.md` for
+full documentation.
+
 ## Running backend tests (inside the backend container)
 
 You can run Django tests using docker exec against the running backend container. Example (runs tests defined in the users app):

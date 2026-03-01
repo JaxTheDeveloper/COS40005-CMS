@@ -21,17 +21,30 @@ def make_offering():
 
 class EnrollmentNotificationTests(TestCase):
     def setUp(self):
+        # create a student and a staff user to act as convenor
         self.student = User.objects.create_user(
             email='student@example.com',
             username='stud',
             password='pwd',
             user_type='student',
         )
-        self.offering = make_offering()
+        self.staff = User.objects.create_user(
+            email='staff@example.com',
+            username='staff',
+            password='pwd',
+            is_staff=True,
+            user_type='staff',
+        )
+        # assign the unit convenor to the staff user
+        offering = make_offering()
+        offering.unit.convenor = self.staff
+        offering.unit.save()
+        self.offering = offering
         self.enrollment = Enrollment.objects.create(student=self.student, offering=self.offering)
 
     def test_notification_on_approve(self):
-        # initially no notifications
+        # creation produced a pending notification; wipe them before continuing
+        Notification.objects.all().delete()
         self.assertEqual(Notification.objects.count(), 0)
 
         approval = EnrollmentApproval.objects.create(enrollment=self.enrollment)
@@ -39,11 +52,22 @@ class EnrollmentNotificationTests(TestCase):
 
         self.enrollment.refresh_from_db()
         self.assertEqual(self.enrollment.status, 'ENROLLED')
+        # only the student notification should exist now
         self.assertEqual(Notification.objects.count(), 1)
         notif = Notification.objects.first()
         self.assertEqual(notif.recipient, self.student)
         self.assertIn('enrolled', notif.verb.lower())
         self.assertEqual(notif.target_object_id, self.enrollment.pk)
+
+    def test_notify_staff_on_new_pending(self):
+        # the initial creation (setUp) should have produced a pending notification
+        staff_notifs = Notification.objects.filter(recipient=self.staff)
+        self.assertTrue(staff_notifs.exists())
+        self.assertIn('pending approval', staff_notifs.first().verb.lower())
+
+        # also all staff users should receive it
+        all_staff_notifs = Notification.objects.filter(recipient__is_staff=True)
+        self.assertTrue(all_staff_notifs.exists())
 
     def test_notification_on_withdraw(self):
         # approve first so that offering count is incremented properly

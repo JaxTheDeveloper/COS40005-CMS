@@ -73,7 +73,9 @@ export default function App() {
       <footer className="footer">
         © {new Date().getFullYear()} Swinburne VN (demo)
       </footer>
-      {process.env.NODE_ENV === "development" && <Agentation />}
+      {process.env.NODE_ENV === "development" && (
+        <Agentation baseUrl={process.env.REACT_APP_AGENTATION_ENDPOINT} />
+      )}
     </div>
   );
 }

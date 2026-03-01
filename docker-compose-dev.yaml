@@ -69,6 +69,26 @@ services:
     depends_on:
       - postgres
 
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: cos40005_mcp
+    command: python tools/mcp_server.py
+    volumes:
+      - .:/app
+    ports:
+      - "8001:8001"
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
+      - MCP_SERVICE_TOKEN=changeme
+      - MCP_API_BASE=http://backend:8000/api
+    networks:
+      - postgres
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   n8n:
     image: docker.io/n8nio/n8n:latest
     container_name: cos40005_n8n
