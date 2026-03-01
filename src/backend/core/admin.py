@@ -4,8 +4,32 @@ from . import models
 
 @admin.register(models.Event)
 class EventAdmin(admin.ModelAdmin):
-    list_display = ('title', 'start', 'end', 'created_by', 'visibility')
+    list_display = ('title', 'start', 'end', 'created_by', 'visibility', 'target_all_students')
     search_fields = ('title', 'description')
+    filter_horizontal = ('attendees', 'target_students', 'target_offerings', 'target_intakes')
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('title', 'description', 'start', 'end', 'location', 'visibility'),
+        }),
+        ('Relations', {
+            'fields': ('created_by', 'related_unit', 'related_offering'),
+        }),
+        ('Attendance', {
+            'fields': ('attendees',),
+        }),
+        ('Targeting', {
+            'fields': ('target_all_students', 'target_students', 'target_offerings', 'target_intakes'),
+            'description': 'Granular control over who receives this event notification.',
+        }),
+        ('Generated Content', {
+            'fields': ('generated_content', 'generation_status', 'generation_meta', 'last_generated_at'),
+            'classes': ('collapse',),
+        }),
+        ('Audit', {
+            'fields': ('created_at', 'updated_at', 'deleted_at', 'is_deleted'),
+            'classes': ('collapse',),
+        }),
+    )
 
 
 @admin.register(models.Session)
@@ -59,3 +83,13 @@ class PageAdmin(admin.ModelAdmin):
 @admin.register(models.MediaAsset)
 class MediaAssetAdmin(admin.ModelAdmin):
     list_display = ('pk', 'uploaded_by', 'created_at')
+
+
+from src.backend.academic.models import Intake
+
+@admin.register(Intake)
+class IntakeAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'semester', 'year')
+    list_filter = ('year', 'semester')
+    ordering = ['-year', 'semester']
+

@@ -81,6 +81,26 @@ class CourseUnit(BaseModel):
         return f"{self.course.code} → {self.unit.code}{tag}"
 
 
+class Intake(BaseModel):
+    """Represents a student intake (semester+year), e.g. SPRING 2025."""
+    SEMESTER_CHOICES = [
+        ('S1', 'Spring'),
+        ('S2', 'Fall'),
+        ('S3', 'Third'),
+        ('SS', 'Summer'),
+        ('WS', 'Winter'),
+    ]
+    semester = models.CharField(max_length=2, choices=SEMESTER_CHOICES)
+    year = models.IntegerField()
+
+    class Meta:
+        unique_together = ('semester', 'year')
+        ordering = ['-year', 'semester']
+
+    def __str__(self):
+        return f"{self.get_semester_display().upper()} {self.year}"
+
+
 class SemesterOffering(BaseModel):
     """
     Represents when a unit is offered in a specific semester
@@ -96,6 +116,7 @@ class SemesterOffering(BaseModel):
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='offerings')
     year = models.IntegerField()
     semester = models.CharField(max_length=2, choices=SEMESTER_CHOICES)
+    intake = models.ForeignKey('academic.Intake', null=True, blank=True, on_delete=models.SET_NULL, related_name='offerings')
     enrollment_start = models.DateTimeField()
     enrollment_end = models.DateTimeField()
     capacity = models.PositiveIntegerField(default=0)
@@ -114,6 +135,11 @@ class SemesterOffering(BaseModel):
         if self.enrollment_start and self.enrollment_end:
             if self.enrollment_start >= self.enrollment_end:
                 raise ValidationError('Enrollment start must be before enrollment end.')
+        # automatically assign intake if missing
+        if not self.intake and self.year and self.semester:
+            # avoid circular import; Intake is declared above
+            intake_obj, _ = Intake.objects.get_or_create(year=self.year, semester=self.semester)
+            self.intake = intake_obj
 
     def is_full(self):
         return self.current_enrollment >= self.capacity if self.capacity > 0 else False

@@ -1,12 +1,34 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
 from . import models
+from src.backend.academic.models import Intake, SemesterOffering
+
+User = get_user_model()
+
+
+class IntakeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Intake
+        fields = ['id', 'semester', 'year']
 
 
 class EventSerializer(serializers.ModelSerializer):
+    # nested relations for clarity
+    target_students = serializers.PrimaryKeyRelatedField(many=True, queryset=User.objects.all(), required=False)
+    target_offerings = serializers.PrimaryKeyRelatedField(many=True, queryset=SemesterOffering.objects.all(), required=False)
+    target_intakes = IntakeSerializer(many=True, required=False)
+
     class Meta:
         model = models.Event
-        fields = '__all__'
-
+        # explicitly list fields to ensure new ones included
+        fields = [
+            'id', 'title', 'description', 'start', 'end', 'location', 'visibility',
+            'attendees',
+            'target_all_students', 'target_students', 'target_offerings', 'target_intakes',
+            'related_unit', 'related_offering',
+            'generated_content', 'generation_status', 'generation_meta', 'last_generated_at',
+            'created_at', 'updated_at', 'deleted_at', 'is_deleted',
+        ]
 
 class SessionSerializer(serializers.ModelSerializer):
     class Meta:

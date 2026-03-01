@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
+from django.db.models import Q
 
 from . import models, serializers
 from .permissions import (
@@ -15,6 +16,16 @@ class EventViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.EventSerializer
     # Events: authenticated users can list/read; convenors and staff can create/edit
     permission_classes = [IsConvenorOrStaffOrReadOnly]
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def targeted_students(self, request, pk=None):
+        """
+        Return the set of students this event targets, based on targeting rules.
+        """
+        event = self.get_object()
+        students = event.get_targeted_students()
+        from src.backend.users.serializers import UserSerializer
+        return Response(UserSerializer(students, many=True).data)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def generate_content(self, request, pk=None):

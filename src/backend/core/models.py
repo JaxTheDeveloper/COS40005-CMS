@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
@@ -29,6 +30,14 @@ class Event(UnitAwareModel):
     visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default='public')
     attendees = models.ManyToManyField(User, related_name='events_attending', blank=True)
 
+    # Targeting: students, class offerings, and intake cohorts
+    target_students = models.ManyToManyField(User, related_name='targeted_events', blank=True)
+    target_offerings = models.ManyToManyField('academic.SemesterOffering', related_name='targeted_events', blank=True)
+    # Intake will be defined below
+    target_intakes = models.ManyToManyField('academic.Intake', related_name='targeted_events', blank=True)
+    target_all_students = models.BooleanField(default=False,
+                                              help_text='If set, event is sent to all students regardless of other targets')
+
     # Optional relations (importing lazily to avoid circular import issues)
     related_unit = models.ForeignKey('academic.Unit', null=True, blank=True, on_delete=models.SET_NULL)
     related_offering = models.ForeignKey('academic.SemesterOffering', null=True, blank=True, on_delete=models.SET_NULL)
@@ -44,6 +53,26 @@ class Event(UnitAwareModel):
     # metadata about the last generation (tone, brand_score, bias_flag, source)
     generation_meta = models.JSONField(default=dict, blank=True)
     last_generated_at = models.DateTimeField(null=True, blank=True)
+
+    def get_targeted_students(self):
+        """Return queryset of students targeted by this event."""
+        UserModel = get_user_model()
+        
+        if self.target_all_students:
+            return UserModel.objects.filter(user_type='student', is_active=True)
+
+        qs = UserModel.objects.none()
+        if self.target_students.exists():
+            qs = qs | self.target_students.all()
+        if self.target_offerings.exists():
+            qs = qs | UserModel.objects.filter(enrollments__offering__in=self.target_offerings.all())
+        if self.target_intakes.exists():
+            qs = qs | UserModel.objects.filter(
+                enrollments__offering__intake__in=self.target_intakes.all()
+            )
+        return qs.distinct()
+
+
 
 
 class Session(BaseModel):
