@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'src.backend.social',
     'src.backend.enrollment',
     'src.backend.core',
+    'src.backend.askai',
 ]
 
 MIDDLEWARE = [

@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/core/', include('src.backend.core.urls')),
     path('api/enrollment/', include('src.backend.enrollment.urls')),
     path('api/social/', include('src.backend.social.urls')),
+    path('api/askai/', include('src.backend.askai.urls')),
 
     # OpenAPI / Swagger schema and UI (drf-spectacular)
     # These endpoints will be available when drf-spectacular is installed.
@@ -40,4 +41,5 @@ urlpatterns = [
     path('', include('src.backend.core.urls')),
     path('', include('src.backend.enrollment.urls')),
     path('', include('src.backend.social.urls')),
+    path('', include('src.backend.askai.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

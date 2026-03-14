@@ -17,6 +17,7 @@ import EnrollSelect from "./pages/EnrollSelect.jsx";
 import TeachingDashboard from "./pages/TeachingDashboard.jsx";
 import StaffEventManager from "./pages/StaffEventManager.jsx";
 import StudentNotifications from "./pages/StudentNotifications.jsx";
+import About from "./pages/About.jsx";
 
 import "./App.css";
 import { authService } from "./services/auth";
@@ -68,6 +69,7 @@ export default function App() {
           <Route path="/teaching" element={<TeachingDashboard />} />
           <Route path="/staff/events" element={<StaffEventManager />} />
           <Route path="/notifications" element={<StudentNotifications />} />
+          <Route path="/about" element={<About />} />
         </Routes>
       </main>
       <footer className="footer">
