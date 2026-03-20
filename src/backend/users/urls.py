@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views.viewsets import UserViewSet
-from .views_api import StudentListView
+from .views_api import StudentListView, TokenObtainPairCompatView, N8NWorkflowViewSet, N8NExecutionLogViewSet
 from .views.auth import CustomLoginView, AdminLoginView
 from .views.dashboard import dashboard_view, student_dashboard_view, convenor_dashboard_view
 from .views.profile import edit_profile
@@ -9,6 +9,8 @@ from django.contrib.auth import views as auth_views
 
 router = DefaultRouter()
 router.register('users', UserViewSet)
+router.register('n8n-workflows', N8NWorkflowViewSet, basename='n8n-workflow')
+router.register('n8n-logs', N8NExecutionLogViewSet, basename='n8n-log')
 
 urlpatterns = [
     path('', include(router.urls)),

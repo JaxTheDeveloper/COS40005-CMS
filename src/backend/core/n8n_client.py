@@ -1,5 +1,6 @@
 import logging
 from django.conf import settings
+from django.db.models import F
 from django.utils import timezone
 import requests
 
@@ -43,7 +44,15 @@ def trigger_workflow(workflow, event_id, payload):
             data = resp.json()
         except Exception:
             data = resp.text
+
+        # Update last_run on success
+        workflow.last_run = timezone.now()
+        workflow.save(update_fields=['last_run'])
+
         return resp.status_code, data
     except Exception as exc:
         logger.exception('Error triggering n8n workflow %s', workflow)
+        # Increment error_count on failure
+        workflow.error_count = F('error_count') + 1
+        workflow.save(update_fields=['error_count'])
         raise

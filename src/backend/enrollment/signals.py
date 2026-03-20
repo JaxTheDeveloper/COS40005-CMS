@@ -1,6 +1,8 @@
+import threading
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 
 from .models import Enrollment, Transcript
 from src.backend.core.models import Notification
@@ -116,3 +118,75 @@ def enrollment_post_save(sender, instance, created, **kwargs):
             target_object_id=instance.pk,
         )
 
+    # ----- n8n outbound trigger -----
+    # When a student's enrollment is newly confirmed (→ ENROLLED), fire any active
+    # n8n workflows registered for trigger_event='enrollment.confirmed'.
+    if new_status == 'ENROLLED' and old_status != 'ENROLLED':
+        threading.Thread(
+            target=_fire_n8n_enrollment,
+            args=(instance.pk,),
+            daemon=True,
+        ).start()
+
+
+# ---------------------------------------------------------------------------
+# n8n outbound trigger: enrollment.confirmed
+# ---------------------------------------------------------------------------
+
+def _fire_n8n_enrollment(instance_pk):
+    """
+    Dispatch all active n8n workflows for trigger_event='enrollment.confirmed'.
+    Runs in a separate daemon thread so it never blocks the HTTP request cycle.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    try:
+        from django.apps import apps
+        N8NWorkflow = apps.get_model('users', 'N8NWorkflow')
+        N8NExecutionLog = apps.get_model('users', 'N8NExecutionLog')
+        from src.backend.core.n8n_client import trigger_workflow
+        from .models import Enrollment
+
+        workflows = N8NWorkflow.objects.filter(
+            trigger_event='enrollment.confirmed', is_active=True
+        )
+        if not workflows.exists():
+            return
+
+        # Fetch a fresh copy to avoid cross-thread lazy-load issues
+        instance = Enrollment.objects.select_related(
+            'student', 'offering', 'offering__unit'
+        ).get(pk=instance_pk)
+
+        payload = {
+            'enrollment_id': instance.pk,
+            'student_id': instance.student_id,
+            'student_email': instance.student.email,
+            'student_name': instance.student.get_full_name(),
+            'unit_code': instance.offering.unit.code,
+            'unit_name': instance.offering.unit.name,
+            'semester': instance.offering.semester,
+            'year': instance.offering.year,
+        }
+
+        for wf in workflows:
+            log = N8NExecutionLog.objects.create(
+                workflow=wf,
+                triggered_by=None,
+                start_time=timezone.now(),
+                status='running',
+                input_data=payload,
+            )
+            try:
+                sc, resp = trigger_workflow(wf, instance.pk, payload)
+                log.status = 'completed' if 200 <= sc < 300 else 'failed'
+                log.output_data = {'status_code': sc, 'response': resp}
+            except Exception as exc:
+                log.status = 'failed'
+                log.error_details = {'error': str(exc)}
+            finally:
+                log.end_time = timezone.now()
+                log.save()
+
+    except Exception:
+        logger.exception('_fire_n8n_enrollment error for pk=%s', instance_pk)
