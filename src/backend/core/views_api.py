@@ -154,11 +154,104 @@ class EventViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
     def generation_callback(self, request, pk=None):
         """
-        Callback endpoint for external workflows (n8n) to POST generated content back to the event.
+        Callback endpoint for n8n to write back to an event.  Supports two phases:
 
-        Security: if `N8N_WEBHOOK_SECRET` is set in Django settings, the caller must send header
-        `X-N8N-SECRET: <secret>` matching that value. If unset, and DEBUG is True, the endpoint will accept
-        the callback (useful for local testing). Otherwise it's rejected.
+        ─ Phase 1  (metadata / GCal link — no AI content yet)
+          Body: { gcal_event_id?: str, generation_timeout_at?: ISO datetime }
+          → Sets generation_status = 'pending', stores gcal_event_id.
+          n8n calls this immediately after creating the GCal event (before Groq finishes).
+
+        ─ Phase 2  (AI content ready)
+          Body: { generated_content: {...}, generation_meta?: {...}, gcal_event_id?: str }
+          → Sets generation_status = 'ready', stores content + meta.
+          n8n calls this once Groq has finished generating.
+
+        If both gcal_event_id AND generated_content are present in a single call, both
+        are stored and status is set to 'ready' (single-phase fast path).
+
+        Security: header `X-N8N-SECRET` must match `N8N_WEBHOOK_SECRET` setting.
+        In DEBUG without a configured secret, the endpoint is open for local testing.
+        """
+        from django.conf import settings
+
+        event = self.get_object()
+
+        # ── Auth ──────────────────────────────────────────────────────────
+        secret_required = getattr(settings, 'N8N_WEBHOOK_SECRET', None)
+        if secret_required:
+            incoming = request.headers.get('X-N8N-SECRET') or request.META.get('HTTP_X_N8N_SECRET')
+            if incoming != secret_required:
+                return Response({'detail': 'Invalid callback secret'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            if not getattr(settings, 'DEBUG', False):
+                return Response({'detail': 'Callback secret not configured'}, status=status.HTTP_403_FORBIDDEN)
+
+        # ── Extract payload fields ─────────────────────────────────────────
+        generated_content = request.data.get('generated_content')
+        generation_meta   = request.data.get('generation_meta')
+        gcal_event_id     = request.data.get('gcal_event_id')
+        timeout_at        = request.data.get('generation_timeout_at')
+
+        # Must supply at least one meaningful field
+        if not generated_content and not gcal_event_id:
+            return Response(
+                {'detail': 'Provide at least one of: generated_content, gcal_event_id'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        update_fields = []
+
+        # ── Phase 1 — store GCal link / set pending ────────────────────────
+        if gcal_event_id:
+            event.gcal_event_id = gcal_event_id
+            update_fields.append('gcal_event_id')
+
+        if timeout_at:
+            from django.utils.dateparse import parse_datetime
+            parsed = parse_datetime(timeout_at)
+            if parsed:
+                event.generation_timeout_at = parsed
+                update_fields.append('generation_timeout_at')
+
+        # ── Phase 2 — store AI content / mark ready ────────────────────────
+        if generated_content:
+            event.generated_content  = generated_content
+            event.generation_meta    = generation_meta or {}
+            event.generation_status  = 'ready'
+            event.last_generated_at  = timezone.now()
+            update_fields += ['generated_content', 'generation_meta',
+                               'generation_status', 'last_generated_at']
+        elif gcal_event_id:
+            # Phase-1-only call: mark as pending (only if currently idle/failed)
+            if event.generation_status in ('idle', 'failed'):
+                event.generation_status = 'pending'
+                update_fields.append('generation_status')
+
+        event.save(update_fields=update_fields)
+
+        phase = 2 if generated_content else 1
+        return Response(
+            {
+                'detail': 'Saved',
+                'phase': phase,
+                'generation_status': event.generation_status,
+                'gcal_event_id': event.gcal_event_id,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny],
+            url_path='gcal-sync')
+    def gcal_sync(self, request, pk=None):
+        """
+        Lightweight endpoint for n8n to store the Google Calendar event ID right after
+        a GCal event is created — without touching AI content fields.
+
+        POST /api/core/events/{id}/gcal-sync/
+        Body: { gcal_event_id: "abc123xyz", generation_timeout_at?: "2024-01-01T12:00:00Z" }
+
+        Same secret auth as generation_callback.  Status is set to 'pending' if the event
+        is currently idle, so the frontend can show a loading state.
         """
         from django.conf import settings
 
@@ -170,23 +263,35 @@ class EventViewSet(viewsets.ModelViewSet):
             if incoming != secret_required:
                 return Response({'detail': 'Invalid callback secret'}, status=status.HTTP_403_FORBIDDEN)
         else:
-            # If no secret configured, allow in DEBUG for convenience only
             if not getattr(settings, 'DEBUG', False):
                 return Response({'detail': 'Callback secret not configured'}, status=status.HTTP_403_FORBIDDEN)
 
-        generated_content = request.data.get('generated_content')
-        generation_meta = request.data.get('generation_meta')
+        gcal_event_id = request.data.get('gcal_event_id')
+        if not gcal_event_id:
+            return Response({'detail': 'gcal_event_id required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not generated_content:
-            return Response({'detail': 'No generated_content in payload'}, status=status.HTTP_400_BAD_REQUEST)
+        update_fields = ['gcal_event_id']
+        event.gcal_event_id = gcal_event_id
 
-        event.generated_content = generated_content
-        event.generation_meta = generation_meta or {}
-        event.generation_status = 'ready'
-        event.last_generated_at = timezone.now()
-        event.save()
+        if event.generation_status in ('idle', 'failed'):
+            event.generation_status = 'pending'
+            update_fields.append('generation_status')
 
-        return Response({'detail': 'Saved'}, status=status.HTTP_200_OK)
+        timeout_at = request.data.get('generation_timeout_at')
+        if timeout_at:
+            from django.utils.dateparse import parse_datetime
+            parsed = parse_datetime(timeout_at)
+            if parsed:
+                event.generation_timeout_at = parsed
+                update_fields.append('generation_timeout_at')
+
+        event.save(update_fields=update_fields)
+
+        return Response(
+            {'detail': 'GCal link saved', 'gcal_event_id': event.gcal_event_id,
+             'generation_status': event.generation_status},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=['post'], url_path='import-csv', permission_classes=[])
     def import_csv(self, request):

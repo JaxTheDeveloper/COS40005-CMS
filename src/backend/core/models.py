@@ -54,6 +54,18 @@ class Event(UnitAwareModel):
     generation_meta = models.JSONField(default=dict, blank=True)
     last_generated_at = models.DateTimeField(null=True, blank=True)
 
+    # Google Calendar integration — stores the GCal event ID so n8n can update
+    # the calendar description once AI content is finalised (Phase 2 callback).
+    gcal_event_id = models.CharField(
+        max_length=255, blank=True, null=True,
+        help_text='Google Calendar event ID — set by n8n after creating the GCal event'
+    )
+    # Safety valve: if AI generation hasn't completed by this time, escalate / retry.
+    generation_timeout_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='If generation_status stays pending past this datetime, treat as failed'
+    )
+
     def get_targeted_students(self):
         """Return queryset of students targeted by this event."""
         UserModel = get_user_model()
