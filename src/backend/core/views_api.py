@@ -473,17 +473,22 @@ class EventViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsStaff])
     def refine_content(self, request, pk=None):
         """
-        Staff-only: trigger AI refinement of an event's generated content via n8n WF-4.
+        Staff-only: synchronous AI refinement via n8n WF-4 (chat loop friendly).
+
+        n8n webhook must be configured with Respond: 'Using Respond to Webhook Node'
+        so that this call blocks until Groq returns, then the refined content is
+        returned directly in the response — no polling needed.
 
         POST body:
           refinement_prompt (str, required) — natural-language feedback for Groq
           current_content   (dict, optional) — content to refine; defaults to event.generated_content
+          chat_history      (list, optional) — previous turns [{"role": "user"|"assistant", "content": "..."}]
 
         Returns:
-          202 — n8n workflow triggered, generation_status set to 'pending'
-          200 — mock refiner ran (no active event.refine workflow registered)
+          200 — refined content returned synchronously (n8n path or mock)
           400 — refinement_prompt missing or blank
-          502 — trigger_workflow() raised an exception
+          502 — n8n call failed or timed out
+          503 — no active workflow registered (use mock path instead)
         """
         from django.apps import apps
 
@@ -501,6 +506,7 @@ class EventViewSet(viewsets.ModelViewSet):
 
         # ── Resolve content source ────────────────────────────────────────────
         current_content = request.data.get('current_content') or event.generated_content or {}
+        chat_history = request.data.get('chat_history', [])
 
         # ── Build audience context ────────────────────────────────────────────
         audience_context = {
@@ -524,12 +530,21 @@ class EventViewSet(viewsets.ModelViewSet):
             wf = N8NWorkflow.objects.filter(trigger_event='event.refine', is_active=True).first()
 
         if wf:
-            # ── n8n path ──────────────────────────────────────────────────────
+            # ── n8n synchronous path ──────────────────────────────────────────
+            # n8n webhook must use "Respond to Webhook" node so this call blocks
+            # until Groq finishes and returns the refined content directly.
+            from .n8n_client import _resolve_webhook_url
+            import requests as _requests
+
+            config = getattr(wf, 'configuration', {}) or {}
+            webhook_url = _resolve_webhook_url(config)
+
             payload = {
                 'event_id': str(event.id),
                 'current_content': current_content,
                 'refinement_prompt': refinement_prompt,
                 'audience_context': audience_context,
+                'chat_history': chat_history,
                 'triggered_by': getattr(request.user, 'id', None),
             }
 
@@ -545,27 +560,63 @@ class EventViewSet(viewsets.ModelViewSet):
                 )
 
             try:
-                from .n8n_client import trigger_workflow
-                status_code, resp = trigger_workflow(wf, event.id, payload)
+                resp = _requests.post(
+                    webhook_url,
+                    json={'event_id': str(event.id), 'timestamp': timezone.now().isoformat(), 'payload': payload},
+                    headers={'Content-Type': 'application/json'},
+                    timeout=60,  # Groq can take up to ~15s; give plenty of room
+                )
+                resp.raise_for_status()
+
+                try:
+                    n8n_data = resp.json()
+                except Exception:
+                    n8n_data = {}
+
+                # n8n Respond to Webhook node should return:
+                # { generated_content: {...}, generation_meta: {...} }
+                generated_content = n8n_data.get('generated_content') or n8n_data
+                generation_meta = n8n_data.get('generation_meta', {
+                    'generated_by': 'n8n-groq-refine',
+                    'refinement_prompt': refinement_prompt,
+                })
+
+                # Normalise if n8n returned a string
+                if isinstance(generated_content, str):
+                    import json as _json
+                    try:
+                        generated_content = _json.loads(generated_content)
+                    except ValueError:
+                        generated_content = {'social_post': generated_content}
+
+                # Save to event
+                event.generated_content = generated_content
+                event.generation_meta = generation_meta
+                event.generation_status = 'ready'
+                event.last_generated_at = timezone.now()
+                event.save(update_fields=[
+                    'generated_content', 'generation_meta',
+                    'generation_status', 'last_generated_at',
+                ])
 
                 if log:
-                    log.output_data = {'status_code': status_code, 'response': resp}
-                    log.status = 'completed' if 200 <= int(status_code) < 300 else 'failed'
+                    log.output_data = {'status_code': resp.status_code, 'response': n8n_data}
+                    log.status = 'completed'
                     log.end_time = timezone.now()
                     log.save()
 
-                event.generation_status = 'pending'
-                event.last_generated_at = timezone.now()
-                event.save(update_fields=['generation_status', 'last_generated_at'])
+                wf.last_run = timezone.now()
+                wf.save(update_fields=['last_run'])
 
-                return Response(
-                    {'detail': 'Refinement triggered', 'generation_status': 'pending'},
-                    status=status.HTTP_202_ACCEPTED,
-                )
+                return Response({
+                    'generated_content': generated_content,
+                    'generation_meta': generation_meta,
+                    'generation_status': 'ready',
+                }, status=status.HTTP_200_OK)
 
             except Exception as exc:
                 import logging
-                logging.getLogger(__name__).exception('refine_content trigger failed for event %s', event.id)
+                logging.getLogger(__name__).exception('refine_content n8n call failed for event %s', event.id)
 
                 if log:
                     log.error_details = {'error': str(exc)}
@@ -573,11 +624,8 @@ class EventViewSet(viewsets.ModelViewSet):
                     log.end_time = timezone.now()
                     log.save()
 
-                event.generation_status = 'failed'
-                event.save(update_fields=['generation_status'])
-
                 return Response(
-                    {'detail': 'Failed to trigger refinement workflow', 'error': str(exc)},
+                    {'detail': 'Refinement workflow failed', 'error': str(exc)},
                     status=status.HTTP_502_BAD_GATEWAY,
                 )
 
@@ -598,59 +646,284 @@ class EventViewSet(viewsets.ModelViewSet):
         event.save(update_fields=['generated_content', 'generation_status', 'generation_meta'])
 
         return Response(
-            {'generated_content': mock_content, 'generation_meta': meta},
+            {'generated_content': mock_content, 'generation_meta': meta, 'generation_status': 'ready'},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'], permission_classes=[IsStaff], url_path='confirm-content')
+    def confirm_content(self, request, pk=None):
+        """
+        Staff confirms the current generated_content is final and the event
+        is ready to be sent to students.
+
+        Sets visibility to 'public' (or the provided value) and generation_status to 'ready'.
+        This is the "Confirm & Publish" button action.
+
+        POST body:
+          visibility (str, optional) — 'public' | 'unit' | 'staff' (default: 'public')
+        """
+        event = self.get_object()
+
+        if not event.generated_content:
+            return Response(
+                {'detail': 'No generated content to confirm. Run refinement first.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        visibility = request.data.get('visibility', 'public')
+        if visibility not in ('public', 'unit', 'staff'):
+            return Response({'detail': 'visibility must be public, unit, or staff'}, status=status.HTTP_400_BAD_REQUEST)
+
+        event.visibility = visibility
+        event.generation_status = 'ready'
+        meta = event.generation_meta or {}
+        meta['confirmed_by'] = getattr(request.user, 'email', str(request.user))
+        meta['confirmed_at'] = timezone.now().isoformat()
+        event.generation_meta = meta
+        event.save(update_fields=['visibility', 'generation_status', 'generation_meta'])
+
+        return Response({
+            'detail': 'Event confirmed and ready to publish',
+            'id': event.id,
+            'title': event.title,
+            'visibility': event.visibility,
+            'generation_status': event.generation_status,
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['put'], permission_classes=[IsStaff], url_path='update-content')
+    def update_content(self, request, pk=None):
+        """
+        Staff-only: fully replace generated_content and optionally generation_meta.
+
+        PUT body:
+          generated_content (dict, required) — full replacement of all content fields
+          generation_meta   (dict, optional) — replacement metadata
+          generation_status (str, optional) — override status (default: 'ready')
+        """
+        event = self.get_object()
+
+        generated_content = request.data.get('generated_content')
+        if not generated_content or not isinstance(generated_content, dict):
+            return Response(
+                {'detail': 'generated_content (dict) is required'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        event.generated_content = generated_content
+        event.generation_meta = request.data.get('generation_meta', event.generation_meta or {})
+        event.generation_status = request.data.get('generation_status', 'ready')
+        event.last_generated_at = timezone.now()
+        event.save(update_fields=[
+            'generated_content', 'generation_meta', 'generation_status', 'last_generated_at'
+        ])
+
+        return Response(serializers.EventSerializer(event).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsStaff], url_path='patch-content')
+    def patch_content(self, request, pk=None):
+        """
+        Staff-only: partially update individual fields within generated_content.
+        Only the keys provided are updated; others are left untouched.
+
+        PATCH body:
+          generated_content (dict, optional) — partial update, merged into existing content
+          generation_meta   (dict, optional) — partial update, merged into existing meta
+          generation_status (str, optional) — override status
+        """
+        event = self.get_object()
+
+        if 'generated_content' in request.data:
+            incoming = request.data['generated_content']
+            if not isinstance(incoming, dict):
+                return Response(
+                    {'detail': 'generated_content must be a dict'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            current = event.generated_content or {}
+            current.update(incoming)
+            event.generated_content = current
+
+        if 'generation_meta' in request.data:
+            meta = event.generation_meta or {}
+            meta.update(request.data['generation_meta'])
+            event.generation_meta = meta
+
+        if 'generation_status' in request.data:
+            event.generation_status = request.data['generation_status']
+
+        event.last_generated_at = timezone.now()
+        event.save(update_fields=[
+            'generated_content', 'generation_meta', 'generation_status', 'last_generated_at'
+        ])
+
+        return Response(serializers.EventSerializer(event).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'], permission_classes=[IsStaff], url_path='clear-content')
+    def clear_content(self, request, pk=None):
+        """
+        Staff-only: clear generated content and reset generation status to idle.
+        The event itself is NOT deleted — only the AI-generated fields are wiped.
+        """
+        event = self.get_object()
+        event.generated_content = {}
+        event.generation_meta = {}
+        event.generation_status = 'idle'
+        event.last_generated_at = None
+        event.save(update_fields=[
+            'generated_content', 'generation_meta', 'generation_status', 'last_generated_at'
+        ])
+
+        return Response(
+            {'detail': 'Generated content cleared', 'id': event.id, 'generation_status': 'idle'},
             status=status.HTTP_200_OK,
         )
 
     @action(detail=False, methods=['post'], permission_classes=[IsStaff], url_path='batch-create-webhook')
     def batch_create_from_webhook(self, request):
         """
-        Webhook endpoint for n8n to POST back a batch of generated events.
-        Expected payload: {
-          'events': [
+        Webhook endpoint for n8n to POST back a batch of events.
+
+        Supports two payload shapes — both can be mixed in the same request:
+
+        ── Simple shape (original) ──────────────────────────────────────────
+        {
+          "events": [
             {
-              'title': '...',
-              'description': '...',
-              'start': '2025-...',
-              'end': '2025-...',
-              'location': '...',
-              'visibility': 'public|unit|staff',
-              'generated_content': {...},
-              'generation_meta': {...},
-              'related_unit_id': <id or null>,
-              'related_offering_id': <id or null>
-            },
-            ...
+              "title": "...", "description": "...",
+              "start": "2025-11-26T08:00:00",
+              "end": "2025-11-26T10:00:00",
+              "location": "...", "visibility": "public|unit|staff",
+              "generated_content": {...}, "generation_meta": {...},
+              "related_unit_id": <id|null>, "related_offering_id": <id|null>
+            }
           ]
         }
+
+        ── Rich CSV shape (from n8n CSV pipeline) ───────────────────────────
+        {
+          "events": [
+            {
+              "Event_Title": "Tuition Fee Deadline",
+              "Event_Date": "2025-12-12",
+              "Start_Time": "07:00",
+              "Location": "Academic Department",
+              "Notify_Rule": "1 week before",
+              "Channels": "Email",
+              "Target_Audience": "Parents, students",
+              "Dept_Filter": "all",
+              "Content_Remarks": "Tone: professional; topic: payment deadline",
+              "Assets_URL": "https://drive.google.com/..."
+            }
+          ]
+        }
+
+        Fields are normalised automatically. Unknown extra fields are stored
+        in generation_meta.csv_meta for reference.
         """
+        import re
+        from datetime import datetime, date
+
         events_data = request.data.get('events', [])
         if not events_data:
             return Response({'error': 'No events provided'}, status=status.HTTP_400_BAD_REQUEST)
 
+        def _normalise(raw: dict) -> dict:
+            """Convert either shape into a dict suitable for EventSerializer."""
+            # Detect rich CSV shape by presence of CSV-specific keys
+            is_csv = 'Event_Title' in raw or 'Event_Date' in raw
+
+            if not is_csv:
+                # Simple shape — pass through with minor cleanup
+                return raw
+
+            # ── Rich CSV → Event field mapping ────────────────────────────
+            title = raw.get('Event_Title', '').strip()
+
+            # Combine Event_Date + Start_Time → ISO datetime
+            event_date = raw.get('Event_Date', '').strip()
+            start_time = raw.get('Start_Time', '08:00').strip() or '08:00'
+            start_dt = None
+            for fmt in ('%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y'):
+                try:
+                    d = datetime.strptime(event_date, fmt).date()
+                    start_dt = f"{d.isoformat()}T{start_time}:00"
+                    break
+                except ValueError:
+                    continue
+            if not start_dt:
+                start_dt = f"{event_date}T{start_time}:00"
+
+            location = raw.get('Location', '').strip()
+            if location.lower() in ('n/a', 'na', ''):
+                location = ''
+
+            # Target_Audience → visibility + target_all_students
+            audience_raw = raw.get('Target_Audience', 'students').lower()
+            target_all = True  # default
+            visibility = 'public'
+            if 'parent' in audience_raw:
+                visibility = 'public'
+                target_all = True
+            elif 'staff' in audience_raw:
+                visibility = 'staff'
+                target_all = False
+            else:
+                visibility = 'public'
+                target_all = True
+
+            # Content_Remarks → description (also used as AI generation prompt)
+            content_remarks = raw.get('Content_Remarks', '').strip()
+
+            # Build generation_meta from CSV-specific fields
+            csv_meta = {
+                'notify_rule': raw.get('Notify_Rule', '').strip(),
+                'channels': raw.get('Channels', '').strip(),
+                'target_audience': raw.get('Target_Audience', '').strip(),
+                'dept_filter': raw.get('Dept_Filter', '').strip(),
+                'content_remarks': content_remarks,
+                'assets_url': raw.get('Assets_URL', '').strip(),
+                'source': 'csv_import',
+            }
+
+            return {
+                'title': title,
+                'description': content_remarks,
+                'start': start_dt,
+                'end': None,
+                'location': location,
+                'visibility': visibility,
+                'target_all_students': target_all,
+                'generation_status': 'idle',
+                'generation_meta': {'csv_meta': csv_meta},
+            }
+
         created_events = []
         errors = []
 
-        for event_data in events_data:
+        for raw_data in events_data:
             try:
-                # Set creator and timestamps
-                event_data['created_by'] = request.user.id
-                
-                # Create event using serializer
+                event_data = _normalise(dict(raw_data))
+
+                # Pull out non-serializer fields before passing to serializer
+                target_all = event_data.pop('target_all_students', None)
+
                 serializer = serializers.EventSerializer(data=event_data)
                 if serializer.is_valid():
-                    event = serializer.save(created_by=request.user)
+                    save_kwargs = {'created_by': request.user}
+                    if target_all is not None:
+                        save_kwargs['target_all_students'] = target_all
+                    event = serializer.save(**save_kwargs)
                     created_events.append(serializer.data)
                 else:
-                    errors.append({'data': event_data, 'errors': serializer.errors})
+                    errors.append({'data': raw_data, 'errors': serializer.errors})
             except Exception as exc:
-                errors.append({'data': event_data, 'error': str(exc)})
+                errors.append({'data': raw_data, 'error': str(exc)})
 
         return Response({
             'created_count': len(created_events),
             'error_count': len(errors),
             'created_events': created_events,
-            'errors': errors if errors else None
+            'errors': errors if errors else None,
         }, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'], permission_classes=[IsStaff], url_path='pending-refinement')
