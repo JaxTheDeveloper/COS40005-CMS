@@ -13,7 +13,13 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-change-this-in
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    # Internal Docker hostnames — n8n calls back using this hostname
+    'cos40005_backend',
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -39,6 +45,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Must be FIRST: rewrites invalid RFC hostnames from internal Docker callers
+    # (e.g. n8n sends Host: cos40005_backend:8000 which Django rejects due to
+    # the underscore being invalid per RFC 1034/1035)
+    'src.backend.core.middleware.N8NInternalHostMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',

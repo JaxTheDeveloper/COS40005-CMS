@@ -67,18 +67,40 @@ class EventViewSet(viewsets.ModelViewSet):
         if UsersModels:
             workflows = UsersModels.objects.filter(is_active=True, trigger_event='event.generate')
             if workflows.exists():
-                # Build payload once
+                # Build payload once — flat structure so n8n Code nodes can
+                # read fields directly as payload.title, payload.start, etc.
+                import pytz
+                _VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
+
+                def _to_rfc3339(dt):
+                    """Return RFC 3339 string; make naive datetimes VN-local."""
+                    if not dt:
+                        return None
+                    if timezone.is_naive(dt):
+                        dt = _VN_TZ.localize(dt)
+                    return dt.isoformat()
+
                 payload = {
-                    'prompt': prompt,
+                    # Top-level flat fields — consumed directly by n8n expressions
+                    'event_id':    str(event.id),
+                    'title':       event.title,
+                    'description': event.description or '',
+                    'start':       _to_rfc3339(event.start),
+                    'end':         _to_rfc3339(event.end) if event.end else _to_rfc3339(event.start),
+                    'location':    event.location or '',
+                    'prompt':      prompt,
+                    # Nested copy kept for backward compat
                     'event': {
-                        'id': event.id,
-                        'title': event.title,
-                        'description': event.description,
-                        'start': event.start.isoformat() if event.start else None,
-                        'location': event.location,
+                        'id':          event.id,
+                        'title':       event.title,
+                        'description': event.description or '',
+                        'start':       _to_rfc3339(event.start),
+                        'end':         _to_rfc3339(event.end) if event.end else _to_rfc3339(event.start),
+                        'location':    event.location or '',
                     },
                     'triggered_by': getattr(request.user, 'id', None),
                 }
+
 
                 # Lazy import to avoid hard dependency unless used
                 from .n8n_client import trigger_workflow
@@ -199,16 +221,35 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # ── Normalise generated_content ────────────────────────────────────
+        # n8n can send JSON as a string (e.g. if the expression serialised to
+        # a string instead of an object). Always coerce to dict.
+        if generated_content and isinstance(generated_content, str):
+            import json as _json
+            try:
+                generated_content = _json.loads(generated_content)
+            except ValueError:
+                # Wrap raw string as a social_post fallback so we never 500
+                generated_content = {'social_post': generated_content}
+
+        # Ensure meta is always a dict
+        if generation_meta and isinstance(generation_meta, str):
+            import json as _json
+            try:
+                generation_meta = _json.loads(generation_meta)
+            except ValueError:
+                generation_meta = {}
+
         update_fields = []
 
         # ── Phase 1 — store GCal link / set pending ────────────────────────
         if gcal_event_id:
-            event.gcal_event_id = gcal_event_id
+            event.gcal_event_id = str(gcal_event_id)
             update_fields.append('gcal_event_id')
 
         if timeout_at:
             from django.utils.dateparse import parse_datetime
-            parsed = parse_datetime(timeout_at)
+            parsed = parse_datetime(str(timeout_at))
             if parsed:
                 event.generation_timeout_at = parsed
                 update_fields.append('generation_timeout_at')
@@ -227,7 +268,13 @@ class EventViewSet(viewsets.ModelViewSet):
                 event.generation_status = 'pending'
                 update_fields.append('generation_status')
 
-        event.save(update_fields=update_fields)
+        # ── Save ───────────────────────────────────────────────────────────
+        # Guard: update_fields must be non-empty, and must include every field
+        # that was mutated on the instance.  Fall back to a full save if empty.
+        if update_fields:
+            event.save(update_fields=list(set(update_fields)))
+        else:
+            event.save()
 
         phase = 2 if generated_content else 1
         return Response(
@@ -239,6 +286,7 @@ class EventViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny],
             url_path='gcal-sync')
