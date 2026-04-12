@@ -80,8 +80,10 @@ export default function StaffEventManager() {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/core/events/');
-      setEvents(response.data);
+      const response = await api.get('/api/core/events/');
+      // Handle both paginated { results: [...] } and plain array responses
+      const data = response.data;
+      setEvents(Array.isArray(data) ? data : (data.results || []));
       setError(null);
     } catch (err) {
       console.error(err);
@@ -101,7 +103,7 @@ export default function StaffEventManager() {
 
     try {
       setLoading(true);
-      const response = await api.post('/core/events/import-csv/', formData, {
+      const response = await api.post('/api/core/events/import-csv/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setSuccessMessage(
@@ -130,8 +132,8 @@ export default function StaffEventManager() {
     try {
       setLoading(true);
       await api.put(
-        `/core/events/${selectedEvent.id}/refine_content/`,
-        editFormData
+        `/api/core/events/${selectedEvent.id}/update-content/`,
+        { generated_content: editFormData.generated_content, generation_status: editFormData.generation_status }
       );
       setSuccessMessage('Event content updated successfully');
       setEditDialogOpen(false);
@@ -147,12 +149,9 @@ export default function StaffEventManager() {
   const handleGenerateContent = async (eventId) => {
     try {
       setLoading(true);
-      await api.post(
-        `/core/events/${eventId}/generate_content/`,
-        {
-          prompt: 'Generate event content',
-        }
-      );
+      await api.post(`/api/core/events/${eventId}/generate_content/`, {
+        prompt: 'Generate event content',
+      });
       setSuccessMessage('Content generation triggered');
       await loadEvents();
     } catch (err) {
@@ -449,11 +448,11 @@ export default function StaffEventManager() {
           {chatbotEventId && (
             <EventRefinementChatbot
               eventId={chatbotEventId}
-              onClose={() => setChatbotOpen(false)}
+              onClose={() => { setChatbotOpen(false); loadEvents(); }}
               onPublish={() => {
                 setChatbotOpen(false);
                 loadEvents();
-                setSuccessMessage('Event published successfully');
+                setSuccessMessage('Event confirmed and published successfully');
               }}
             />
           )}

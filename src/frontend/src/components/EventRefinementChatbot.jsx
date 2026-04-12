@@ -1,315 +1,298 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
   TextField,
   Button,
-  Card,
-  CardContent,
-  Tabs,
-  Tab,
   CircularProgress,
   Alert,
-  Chip,
-  Grid,
   Typography,
+  Divider,
+  Chip,
   IconButton,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import EditIcon from '@mui/icons-material/Edit';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { api } from '../services/api';
 
+const CONTENT_KEYS = ['social_post', 'email_newsletter', 'recruitment_ad', 'vietnamese_version'];
+
+function ContentPreview({ content }) {
+  if (!content || Object.keys(content).length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+        No content yet — send a refinement prompt to generate.
+      </Typography>
+    );
+  }
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {CONTENT_KEYS.filter(k => content[k]).map(key => (
+        <Box key={key}>
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 600 }}>
+            {key.replace(/_/g, ' ')}
+          </Typography>
+          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 0.5 }}>
+            {content[key]}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+function ChatBubble({ role, text }) {
+  const isUser = role === 'user';
+  return (
+    <Box sx={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start', mb: 1 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          px: 2, py: 1,
+          maxWidth: '80%',
+          bgcolor: isUser ? 'primary.main' : 'grey.100',
+          color: isUser ? 'white' : 'text.primary',
+          borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+        }}
+      >
+        <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{text}</Typography>
+      </Paper>
+    </Box>
+  );
+}
+
 export default function EventRefinementChatbot({ eventId, onClose, onPublish }) {
-  const [tabValue, setTabValue] = useState(0);
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refinementMode, setRefinementMode] = useState('direct_edit'); // 'direct_edit' | 'prompt'
-  const [userInput, setUserInput] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [selectedSuggestion, setSelectedSuggestion] = useState(null);
-  const [editMode, setEditMode] = useState(false);
-  const [editField, setEditField] = useState('social_post');
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('info');
+  const [prompt, setPrompt] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [currentContent, setCurrentContent] = useState({});
+  const [error, setError] = useState('');
+  const [confirming, setConfirming] = useState(false);
+  const bottomRef = useRef(null);
 
   useEffect(() => {
-    fetchEventDetails();
+    fetchEvent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
-  const fetchEventDetails = async () => {
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory, submitting]);
+
+  const fetchEvent = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/events/${eventId}/get_generation_status/`);
-      setEvent(response.data);
-    } catch (error) {
-      setMessage(`Error loading event: ${error.message}`);
-      setMessageType('error');
+      const res = await api.get(`/api/core/events/${eventId}/get_generation_status/`);
+      setEvent(res.data);
+      setCurrentContent(res.data.generated_content || {});
+    } catch (err) {
+      setError('Failed to load event details.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePromptRefinement = async () => {
-    if (!userInput.trim()) return;
+  const handleSend = async () => {
+    const trimmed = prompt.trim();
+    if (!trimmed || submitting) return;
+
+    const userTurn = { role: 'user', content: trimmed };
+    const updatedHistory = [...chatHistory, userTurn];
+    setChatHistory(updatedHistory);
+    setPrompt('');
+    setSubmitting(true);
+    setError('');
 
     try {
-      setSubmitting(true);
-      const response = await api.post(`/api/events/${eventId}/refine-chatbot/`, {
-        refinement_type: 'prompt',
-        content: userInput,
-        field: editField
+      const res = await api.post(`/api/core/events/${eventId}/refine_content/`, {
+        refinement_prompt: trimmed,
+        current_content: currentContent,
+        chat_history: chatHistory, // send history before this turn
       });
 
-      if (response.data.type === 'suggestions') {
-        setSuggestions(response.data.suggestions);
-        setMessage('Suggestions generated! Select one to apply.');
-        setMessageType('success');
-      }
-    } catch (error) {
-      setMessage(`Error: ${error.message}`);
-      setMessageType('error');
+      const refined = res.data.generated_content || {};
+      setCurrentContent(refined);
+
+      // Build a short assistant summary for the chat
+      const summary = refined.social_post
+        ? `Done! Here's the updated content:\n\n${refined.social_post.substring(0, 120)}${refined.social_post.length > 120 ? '…' : ''}`
+        : 'Content updated.';
+
+      setChatHistory(prev => [...prev, { role: 'assistant', content: summary }]);
+    } catch (err) {
+      const msg = err.response?.data?.detail || err.response?.data?.error || 'Refinement failed.';
+      setError(msg);
+      // Remove the user turn we optimistically added
+      setChatHistory(chatHistory);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDirectEdit = async () => {
-    if (!userInput.trim()) return;
-
-    try {
-      setSubmitting(true);
-      const response = await api.post(`/api/events/${eventId}/refine-chatbot/`, {
-        refinement_type: 'direct_edit',
-        content: userInput,
-        field: editField
-      });
-
-      setEvent({
-        ...event,
-        generated_content: response.data.generated_content
-      });
-      setUserInput('');
-      setEditMode(false);
-      setMessage('Content updated successfully!');
-      setMessageType('success');
-    } catch (error) {
-      setMessage(`Error updating content: ${error.message}`);
-      setMessageType('error');
-    } finally {
-      setSubmitting(false);
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
-  const handleApplySuggestion = async (suggestion) => {
+  const handleConfirm = async (visibility = 'public') => {
     try {
-      setSubmitting(true);
-      const response = await api.post(`/api/events/${eventId}/apply-suggestion/`, {
-        suggestion,
-        field: editField
-      });
-
-      setEvent({
-        ...event,
-        generated_content: response.data.generated_content
-      });
-      setSuggestions([]);
-      setUserInput('');
-      setMessage('Suggestion applied successfully!');
-      setMessageType('success');
-    } catch (error) {
-      setMessage(`Error applying suggestion: ${error.message}`);
-      setMessageType('error');
+      setConfirming(true);
+      await api.post(`/api/core/events/${eventId}/confirm-content/`, { visibility });
+      onPublish && onPublish(eventId);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to confirm event.');
     } finally {
-      setSubmitting(false);
+      setConfirming(false);
+    }
+  };
+
+  const handleClearContent = async () => {
+    try {
+      await api.delete(`/api/core/events/${eventId}/clear-content/`);
+      setCurrentContent({});
+      setChatHistory([]);
+      setError('');
+    } catch (err) {
+      setError('Failed to clear content.');
     }
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight={400}>
         <CircularProgress />
       </Box>
     );
   }
 
-  const generatedContent = event?.generated_content || {};
-  const contentFields = ['social_post', 'email_body', 'article_body', 'vietnamese_social_post', 'vietnamese_email_body', 'vietnamese_article_body'];
+  const hasContent = Object.keys(currentContent).length > 0;
+  const isReady = event?.generation_status === 'ready' || hasContent;
 
   return (
-    <Box sx={{ p: 2, maxHeight: '90vh', overflowY: 'auto' }}>
-      {message && (
-        <Alert severity={messageType} sx={{ mb: 2 }} onClose={() => setMessage('')}>
-          {message}
-        </Alert>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 560 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Box>
+          <Typography variant="subtitle1" fontWeight={600}>{event?.title}</Typography>
+          <Chip
+            size="small"
+            label={event?.generation_status || 'idle'}
+            color={isReady ? 'success' : 'default'}
+            sx={{ mt: 0.5 }}
+          />
+        </Box>
+        {hasContent && (
+          <Tooltip title="Clear all generated content">
+            <IconButton size="small" onClick={handleClearContent} color="error">
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
+
+      <Divider sx={{ mb: 1 }} />
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 1 }} onClose={() => setError('')}>{error}</Alert>
       )}
 
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Refine Content: {event?.title}
-      </Typography>
+      {/* Main layout: chat left, content preview right */}
+      <Box sx={{ display: 'flex', gap: 2, flex: 1, overflow: 'hidden' }}>
 
-      {/* Tab navigation for content fields */}
-      <Tabs value={tabValue} onChange={(e, val) => { setTabValue(val); setEditField(contentFields[val]); }}>
-        {contentFields.map((field) => (
-          <Tab key={field} label={field.replace('_', ' ').toUpperCase()} />
-        ))}
-      </Tabs>
-
-      <Box sx={{ mt: 2 }}>
-        {/* Content Preview */}
-        <Paper sx={{ p: 2, mb: 3, bgcolor: '#f5f5f5', minHeight: '150px' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="subtitle2">Current Content</Typography>
-            <Tooltip title="Edit directly">
-              <IconButton size="small" onClick={() => setEditMode(true)}>
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+        {/* Chat column */}
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          {/* Message history */}
+          <Box sx={{ flex: 1, overflowY: 'auto', pr: 1, mb: 1 }}>
+            {chatHistory.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 2 }}>
+                Type a refinement prompt below. Each message refines the content further.
+                When you're happy, click Confirm &amp; Publish.
+              </Typography>
+            )}
+            {chatHistory.map((turn, i) => (
+              <ChatBubble key={i} role={turn.role} text={turn.content} />
+            ))}
+            {submitting && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                <CircularProgress size={16} />
+                <Typography variant="caption" color="text.secondary">Groq is refining…</Typography>
+              </Box>
+            )}
+            <div ref={bottomRef} />
           </Box>
-          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-            {generatedContent[contentFields[tabValue]] || '(No content yet)'}
-          </Typography>
-        </Paper>
 
-        {/* Refinement Mode Selector */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-          <Button
-            variant={refinementMode === 'direct_edit' ? 'contained' : 'outlined'}
-            onClick={() => setRefinementMode('direct_edit')}
-            size="small"
-          >
-            Direct Edit
-          </Button>
-          <Button
-            variant={refinementMode === 'prompt' ? 'contained' : 'outlined'}
-            onClick={() => setRefinementMode('prompt')}
-            size="small"
-          >
-            AI Suggestions
-          </Button>
+          {/* Input */}
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+            <TextField
+              fullWidth
+              multiline
+              maxRows={4}
+              size="small"
+              placeholder="e.g. Make the social post more casual and add emojis"
+              value={prompt}
+              onChange={e => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={submitting}
+            />
+            <Button
+              variant="contained"
+              onClick={handleSend}
+              disabled={!prompt.trim() || submitting}
+              sx={{ minWidth: 44, px: 1.5, height: 40 }}
+            >
+              <SendIcon fontSize="small" />
+            </Button>
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+            Shift+Enter for new line · Enter to send
+          </Typography>
         </Box>
 
-        {/* Input Area */}
-        {refinementMode === 'direct_edit' && (
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={5}
-              placeholder="Type new content here..."
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              disabled={submitting}
-              sx={{ mb: 1 }}
-            />
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-              <Button onClick={() => { setUserInput(''); setEditMode(false); }} disabled={submitting}>
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                endIcon={<SendIcon />}
-                onClick={handleDirectEdit}
-                disabled={!userInput.trim() || submitting}
-              >
-                {submitting ? <CircularProgress size={20} sx={{ mr: 1 }} /> : 'Apply Edit'}
-              </Button>
-            </Box>
+        {/* Content preview column */}
+        <Box sx={{ width: 340, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, textTransform: 'uppercase' }}>
+            Current Content
+          </Typography>
+          <Paper
+            variant="outlined"
+            sx={{ flex: 1, overflowY: 'auto', p: 2, bgcolor: '#fafafa' }}
+          >
+            <ContentPreview content={currentContent} />
           </Paper>
-        )}
+        </Box>
+      </Box>
 
-        {refinementMode === 'prompt' && (
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              placeholder="e.g., 'Make this more casual' or 'Add emojis' or 'Shorten to 2 sentences'"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              disabled={submitting}
-              sx={{ mb: 1 }}
-            />
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-              <Button onClick={() => setUserInput('')} disabled={submitting}>
-                Clear
-              </Button>
-              <Button
-                variant="contained"
-                endIcon={<SendIcon />}
-                onClick={handlePromptRefinement}
-                disabled={!userInput.trim() || submitting}
-              >
-                {submitting ? <CircularProgress size={20} sx={{ mr: 1 }} /> : 'Get Suggestions'}
-              </Button>
-            </Box>
-          </Paper>
-        )}
+      <Divider sx={{ mt: 2, mb: 1.5 }} />
 
-        {/* Suggestions Display */}
-        {suggestions.length > 0 && (
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              AI Suggestions - Select one to apply:
-            </Typography>
-            <Grid container spacing={1}>
-              {suggestions.map((suggestion, idx) => (
-                <Grid item xs={12} key={idx}>
-                  <Card
-                    sx={{
-                      cursor: 'pointer',
-                      border: selectedSuggestion === idx ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                      '&:hover': { boxShadow: 2 }
-                    }}
-                    onClick={() => setSelectedSuggestion(idx)}
-                  >
-                    <CardContent sx={{ py: 1.5 }}>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Typography variant="body2" sx={{ flex: 1, whiteSpace: 'pre-wrap' }}>
-                          {suggestion}
-                        </Typography>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleApplySuggestion(suggestion);
-                          }}
-                          disabled={submitting}
-                        >
-                          Apply
-                        </Button>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        )}
-
-        {/* Publication Info */}
-        <Paper sx={{ p: 2, bgcolor: '#e8f5e9' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CheckCircleIcon sx={{ color: '#4caf50' }} />
-            <Typography variant="body2">
-              Status: {event?.generation_status} | Ready to publish: {generatedContent.social_post ? 'Yes ✓' : 'No'}
-            </Typography>
-          </Box>
-        </Paper>
-
-        {/* Action Buttons */}
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 3 }}>
-          <Button onClick={onClose}>Close</Button>
+      {/* Footer actions */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button onClick={onClose} size="small">Close</Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            color="success"
+            size="small"
+            startIcon={<CheckCircleIcon />}
+            onClick={() => handleConfirm('unit')}
+            disabled={!hasContent || confirming}
+          >
+            Publish to Unit
+          </Button>
           <Button
             variant="contained"
             color="success"
-            onClick={() => onPublish(eventId)}
-            disabled={!generatedContent.social_post}
+            size="small"
+            startIcon={confirming ? <CircularProgress size={14} color="inherit" /> : <CheckCircleIcon />}
+            onClick={() => handleConfirm('public')}
+            disabled={!hasContent || confirming}
           >
-            Publish Event
+            Confirm &amp; Publish
           </Button>
         </Box>
       </Box>
