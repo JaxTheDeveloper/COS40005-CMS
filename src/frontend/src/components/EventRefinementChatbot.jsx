@@ -11,11 +11,17 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { api } from '../services/api';
+import EventTargeting from './EventTargeting';
 
 const CONTENT_KEYS = ['social_post', 'email_newsletter', 'recruitment_ad', 'vietnamese_version'];
 
@@ -72,6 +78,7 @@ export default function EventRefinementChatbot({ eventId, onClose, onPublish }) 
   const [currentContent, setCurrentContent] = useState({});
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState(false);
+  const [audienceOpen, setAudienceOpen] = useState(false);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -86,7 +93,7 @@ export default function EventRefinementChatbot({ eventId, onClose, onPublish }) 
   const fetchEvent = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/api/core/events/${eventId}/get_generation_status/`);
+      const res = await api.get(`/core/events/${eventId}/get_generation_status/`);
       setEvent(res.data);
       setCurrentContent(res.data.generated_content || {});
     } catch (err) {
@@ -108,7 +115,7 @@ export default function EventRefinementChatbot({ eventId, onClose, onPublish }) 
     setError('');
 
     try {
-      const res = await api.post(`/api/core/events/${eventId}/refine_content/`, {
+      const res = await api.post(`/core/events/${eventId}/refine_content/`, {
         refinement_prompt: trimmed,
         current_content: currentContent,
         chat_history: chatHistory, // send history before this turn
@@ -143,7 +150,7 @@ export default function EventRefinementChatbot({ eventId, onClose, onPublish }) 
   const handleConfirm = async (visibility = 'public') => {
     try {
       setConfirming(true);
-      await api.post(`/api/core/events/${eventId}/confirm-content/`, { visibility });
+      await api.post(`/core/events/${eventId}/confirm-content/`, { visibility });
       onPublish && onPublish(eventId);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to confirm event.');
@@ -154,7 +161,7 @@ export default function EventRefinementChatbot({ eventId, onClose, onPublish }) 
 
   const handleClearContent = async () => {
     try {
-      await api.delete(`/api/core/events/${eventId}/clear-content/`);
+      await api.delete(`/core/events/${eventId}/clear-content/`);
       setCurrentContent({});
       setChatHistory([]);
       setError('');
@@ -274,6 +281,17 @@ export default function EventRefinementChatbot({ eventId, onClose, onPublish }) 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Button onClick={onClose} size="small">Close</Button>
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="Set who receives this event">
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<PeopleAltIcon />}
+              onClick={() => setAudienceOpen(true)}
+              disabled={!hasContent}
+            >
+              Audience
+            </Button>
+          </Tooltip>
           <Button
             variant="outlined"
             color="success"
@@ -296,6 +314,23 @@ export default function EventRefinementChatbot({ eventId, onClose, onPublish }) 
           </Button>
         </Box>
       </Box>
+
+      {/* Audience dialog */}
+      <Dialog open={audienceOpen} onClose={() => setAudienceOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Audience Settings — {event?.title}</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <EventTargeting
+            eventId={eventId}
+            onSave={(updated) => {
+              setEvent(prev => ({ ...prev, ...updated }));
+              setAudienceOpen(false);
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAudienceOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
