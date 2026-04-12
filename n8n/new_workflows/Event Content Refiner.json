@@ -1,0 +1,173 @@
+{
+  "name": "Event Content Refiner",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "event-refine",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4bd46f34-21a0-47bd-aec4-14cd5ffeeb52",
+      "name": "Receive from Django",
+      "webhookId": "3ae16adc-07f1-45d1-becf-18a684808395"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst payload = body.payload || body;\nreturn [{ json: {\n  event_id: body.event_id || payload.event_id,\n  current_content: payload.current_content || {},\n  refinement_prompt: payload.refinement_prompt || '',\n  audience_context: payload.audience_context || {}\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "c304273e-4cc0-47d1-a3ec-d887b20f1d2a",
+      "name": "Extract Refine Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is the existing content: {{ JSON.stringify($('Extract Refine Data').first().json.current_content) }}. Refine it based on this feedback: {{ $('Extract Refine Data').first().json.refinement_prompt }}. Target audience context: {{ JSON.stringify($('Extract Refine Data').first().json.audience_context) }}\n",
+        "options": {
+          "systemMessage": "You are a helpful aYou are a professional content editor for Swinburne Vietnam. You will receive existing content and a refinement request. Refine the content accordingly and always respond with valid JSON only. Keys: social_post (150 words, casual), email_newsletter (300 words, formal), recruitment_ad (100 words, persuasive), vietnamese_version (Vietnamese social_post).\nssistant"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "6d956cc9-f63d-48a5-9dc0-69862b3e5075",
+      "name": "Content Refiner"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        416,
+        176
+      ],
+      "id": "a27c574b-a162-4581-a15d-06480102a214",
+      "name": "Groq LLM",
+      "credentials": {
+        "groqApi": {
+          "id": "Nc1I7yxFDgRVdH7K",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = $input.first().json.output || $input.first().json.text || '';\nlet content = {};\ntry {\n  const m = out.match(/\\{[\\s\\S]*\\}/);\n  content = m ? JSON.parse(m[0]) : { social_post: out };\n} catch(e) { content = { social_post: out }; }\nreturn [{ json: {\n  generated_content: content,\n  generation_meta: {\n    generated_by: 'n8n-groq-refine',\n    generated_at: new Date().toISOString(),\n    refinement_prompt: $('Extract Refine Data').first().json.refinement_prompt\n  }\n}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "284e57f0-ac8c-4c2e-94f7-82a86775faae",
+      "name": "Build Callback Payload"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        992,
+        0
+      ],
+      "id": "b53e9739-ea56-4cb4-bde9-6cff71dd6290",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive from Django": {
+      "main": [
+        [
+          {
+            "node": "Extract Refine Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Refine Data": {
+      "main": [
+        [
+          {
+            "node": "Content Refiner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Refiner",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Refiner": {
+      "main": [
+        [
+          {
+            "node": "Build Callback Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Callback Payload": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e767f67a-104d-4232-8151-45b1e41c7c67",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "20cf140876f4536aa1ab101ded9b1cda07435d70d6828b29fc400cbbe8650c2e"
+  },
+  "id": "C8zAxeCMAEjunaTD",
+  "tags": []
+}

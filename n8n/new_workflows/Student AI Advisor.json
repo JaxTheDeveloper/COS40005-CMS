@@ -1,0 +1,191 @@
+{
+  "name": "SwinCMS — Student AI Advisor",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "student-advisor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ba39e2b3-3d5a-49d8-bf8f-04983755b2e4",
+      "name": "Webhook",
+      "webhookId": "73f67f08-0233-4bdd-8326-8c9b65804612"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst payload = body.payload || body;\n\nreturn [{\n  json: {\n    email: payload.email || '',\n    message: payload.message || '',\n    chat_history: payload.chat_history || []\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2242c982-1153-4f92-8a1b-5d121428e5c9",
+      "name": "Extract Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Student email: {{ $json.email }}\n\nQuestion: {{ $json.message }}\n\nChat history: {{ JSON.stringify($json.chat_history) }}\n",
+        "options": {
+          "systemMessage": "You are a personalised academic advisor for Swinburne Vietnam.\n\nThe student's email is provided in the message. Use get_student_profile ONCE to look up their data, then answer the question directly.\n\nSTRICT RULES:\n- Call get_student_profile FIRST and ONLY ONCE\n- Call at most ONE additional tool if the question specifically requires it\n- After 2 tool calls maximum, ALWAYS give a final answer — never call more tools\n- If a tool returns found=false, say \"I don't have information for that account\" and stop\n- Never call the same tool twice\n- Never call more than 3 tools total per conversation turn\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "3daf4e60-e507-47c9-a906-a249c9b4ef79",
+      "name": "AI Agent",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": true,
+      "maxTries": 4,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {
+          "maxTokensToSample": 2048,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        416,
+        192
+      ],
+      "id": "e88b4165-cd52-4bf8-87cb-68b972ce8ee2",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "Nc1I7yxFDgRVdH7K",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://cos40005_mcp:8001/sse",
+        "serverTransport": "sse",
+        "include": "selected",
+        "includeTools": [
+          "get_student_profile",
+          "get_student_transcript",
+          "get_social_gold",
+          "get_upcoming_events",
+          "get_notifications",
+          "award_social_gold",
+          "recommend_courses",
+          "list_available_units",
+          "get_event_content"
+        ],
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        208
+      ],
+      "id": "50eb3ef4-2ad4-4356-9af3-3cccb9e319d3",
+      "name": "MCP Client"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"reply\": \"{{ $json.output }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "bbce9cc6-6c50-407a-b2ba-a63df21c6bc9",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Data": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "356266e0-bfbb-4c99-bb7e-200db1ca84e0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "20cf140876f4536aa1ab101ded9b1cda07435d70d6828b29fc400cbbe8650c2e"
+  },
+  "id": "QLoeXhTwgq44FDRT",
+  "tags": []
+}
