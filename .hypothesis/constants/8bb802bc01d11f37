@@ -1,0 +1,4 @@
+# file: /app/src/backend/core/apps.py
+# hypothesis_version: 6.151.12
+
+['Core', 'src.backend.core']

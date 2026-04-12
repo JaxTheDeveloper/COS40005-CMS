@@ -1,0 +1,4 @@
+# file: /app/src/backend/core/models.py
+# hypothesis_version: 6.151.12
+
+[100, 200, 255, 'Absent', 'Closed', 'Excused', 'High', 'In Progress', 'Lab', 'Late', 'Lecture', 'Low', 'Medium', 'Open', 'Other', 'Present', 'Public', 'Staff only', 'Tutorial', 'Unit only', 'absent', 'academic.Intake', 'academic.Unit', 'attendance_marked', 'attendance_records', 'closed', 'comments', 'events_attending', 'excused', 'high', 'idle', 'in_progress', 'lab', 'late', 'lecture', 'low', 'media_assets/', 'medium', 'notifications', 'notifications_sent', 'open', 'other', 'present', 'public', 'resources/', 'session', 'sessions_instructing', 'staff', 'student', 'submissions', 'target_content_type', 'target_object_id', 'targeted_events', 'tickets_assigned', 'tickets_submitted', 'tutorial', 'unit']

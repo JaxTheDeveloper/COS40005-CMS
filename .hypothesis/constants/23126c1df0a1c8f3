@@ -1,0 +1,4 @@
+# file: /app/src/backend/core/admin.py
+# hypothesis_version: 6.151.12
+
+['-year', 'Attendance', 'Audit', 'Basic Info', 'Generated Content', 'Relations', 'Targeting', '__str__', 'assigned_to', 'attendees', 'classes', 'collapse', 'commenter', 'created_at', 'created_by', 'date', 'deleted_at', 'description', 'end', 'fields', 'form', 'generated_content', 'generation_meta', 'generation_status', 'is_active', 'is_deleted', 'last_generated_at', 'location', 'name', 'pk', 'priority', 'published', 'recipient', 'related_offering', 'related_unit', 'semester', 'session', 'session_type', 'slug', 'start', 'start_time', 'status', 'student', 'student__email', 'submitter', 'target_all_students', 'target_intakes', 'target_offerings', 'target_students', 'ticket', 'title', 'unit', 'unread', 'updated_at', 'uploaded_by', 'verb', 'visibility', 'year']

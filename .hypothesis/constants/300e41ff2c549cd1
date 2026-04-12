@@ -1,0 +1,4 @@
+# file: /app/src/backend/users/views/auth.py
+# hypothesis_version: 6.151.12
+
+['admin:index', 'auth/login.html', 'convenor_dashboard', 'dashboard', 'is_admin', 'student', 'student_dashboard', 'unit_convenor']

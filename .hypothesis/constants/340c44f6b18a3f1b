@@ -1,0 +1,4 @@
+# file: /app/src/backend/enrollment/urls.py
+# hypothesis_version: 6.151.12
+
+['approvals/pending/', 'enrollment', 'enrollments', 'enrollments/', 'pending_approvals', 'transcript', 'transcripts', 'view_enrollments']

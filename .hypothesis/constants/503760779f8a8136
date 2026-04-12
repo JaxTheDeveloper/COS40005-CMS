@@ -1,0 +1,4 @@
+# file: /app/src/backend/users/migrations/0004_remove_auditlog_action_time_auditlog_created_at_and_more.py
+# hypothesis_version: 6.151.12
+
+['action_time', 'auditlog', 'course', 'created_at', 'created_by', 'deleted_at', 'enrollment', 'is_deleted', 'n8nexecutionlog', 'n8nworkflow', 'parentguardian', 'role', 'scholarship', 'studentprofile', 'unit', 'updated_at', 'updated_by', 'userrole', 'users']

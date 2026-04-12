@@ -1,0 +1,4 @@
+# file: /app/src/backend/academic/urls.py
+# hypothesis_version: 6.151.12
+
+['available_units', 'manage_resources', 'my_units', 'offering', 'offerings', 'unit', 'units', 'units/available/', 'units/my/']

@@ -1,0 +1,4 @@
+# file: /app/config/settings/base.py
+# hypothesis_version: 6.151.12
+
+['0.0.0.0', '1.0.0', '127.0.0.1', '5432', 'APP_DIRS', 'BACKEND', 'COS40005 CMS API', 'DEFAULT_SCHEMA_CLASS', 'DESCRIPTION', 'DIRS', 'DJANGO_SECRET_KEY', 'ENGINE', 'HOST', 'NAME', 'OPTIONS', 'PASSWORD', 'PORT', 'POSTGRES_DB', 'POSTGRES_HOST', 'POSTGRES_PASSWORD', 'POSTGRES_PORT', 'POSTGRES_USER', 'SERVE_INCLUDE_SCHEMA', 'SwinCMS', 'TITLE', 'USER', 'UTC', 'VERSION', 'backend', 'config.urls', 'context_processors', 'corsheaders', 'cos40005_backend', 'cos40005_postgres', 'dashboard', 'default', 'django.contrib.admin', 'django.contrib.auth', 'drf_spectacular', 'en-us', 'localhost', 'login', 'media', 'media/', 'password', 'postgres', 'rest_framework', 'src', 'src.backend.academic', 'src.backend.askai', 'src.backend.core', 'src.backend.social', 'src.backend.users', 'static', 'static/', 'staticfiles', 'templates', 'users.User']

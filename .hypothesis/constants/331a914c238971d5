@@ -1,0 +1,4 @@
+# file: /app/src/backend/core/migrations/0003_remove_formsubmission_submitted_at_and_more.py
+# hypothesis_version: 6.151.12
+
+['attendancerecord', 'core', 'created_at', 'created_by', 'deleted_at', 'event', 'form', 'formsubmission', 'is_deleted', 'mediaasset', 'notification', 'page', 'resource', 'session', 'submitted_at', 'ticket', 'ticketcomment', 'updated_at', 'updated_by']

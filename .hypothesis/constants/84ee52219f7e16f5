@@ -1,0 +1,4 @@
+# file: /app/src/backend/enrollment/models.py
+# hypothesis_version: 6.151.12
+
+[0.0, 1.0, 1.3, 1.7, 2.0, 2.3, 2.7, 3.0, 3.3, 3.7, 4.0, 200, '-offering__year', '-year', 'A', 'A+', 'A-', 'B', 'B+', 'B-', 'C', 'C+', 'C-', 'COMPLETED', 'Completed', 'D', 'D+', 'ENROLLED', 'Enrolled', 'F', 'FAILED', 'Failed', 'HD', 'P', 'PENDING', 'Pending Approval', 'WITHDRAWN', 'Withdrawn', 'approval', 'current_enrollment', 'enrollment_approvals', 'enrollments', 'offering', 'offering__semester', 'offering__unit__code', 'offering__unit_id', 'semester', 'status', 'student', 'transcript_entry', 'transcripts', 'unit_code']

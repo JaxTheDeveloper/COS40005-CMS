@@ -1,0 +1,4 @@
+# file: /app/config/urls.py
+# hypothesis_version: 6.151.12
+
+['admin/', 'api/academic/', 'api/askai/', 'api/auth/', 'api/core/', 'api/docs/', 'api/enrollment/', 'api/redoc/', 'api/schema/', 'api/social/', 'api/token/', 'api/token/compat/', 'api/token/refresh/', 'api/users/', 'redoc', 'rest_framework.urls', 'schema', 'swagger-ui', 'token_obtain_pair', 'token_refresh']

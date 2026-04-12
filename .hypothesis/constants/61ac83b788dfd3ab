@@ -1,0 +1,4 @@
+# file: /app/src/backend/academic/admin.py
+# hypothesis_version: 6.151.12
+
+['anti_requisites', 'capacity', 'code', 'course', 'course__code', 'course__name', 'credit_points', 'current_enrollment', 'department', 'duration_years', 'is_active', 'is_elective', 'is_required', 'name', 'prerequisites', 'resource_type', 'semester', 'title', 'unit', 'unit__code', 'unit__name', 'year']

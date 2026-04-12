@@ -1,0 +1,4 @@
+# file: /app/src/backend/core/migrations/0004_event_targeting.py
+# hypothesis_version: 6.151.12
+
+['academic', 'academic.Intake', 'core', 'event', 'target_all_students', 'target_intakes', 'target_offerings', 'target_students', 'targeted_events']

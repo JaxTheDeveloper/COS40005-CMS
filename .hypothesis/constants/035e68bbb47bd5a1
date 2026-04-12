@@ -1,0 +1,4 @@
+# file: /app/src/backend/users/serializers.py
+# hypothesis_version: 6.151.12
+
+['bio', 'configuration', 'confirm_password', 'created_at', 'department', 'description', 'email', 'end_time', 'error_count', 'error_details', 'execution_id', 'first_name', 'id', 'input_data', 'is_active', 'is_staff', 'last_name', 'last_run', 'name', 'output_data', 'password', 'position', 'profile_image', 'start_time', 'status', 'trigger_event', 'triggered_by_email', 'updated_at', 'user_type', 'username', 'workflow', 'workflow.name', 'workflow_id', 'workflow_name']

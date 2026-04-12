@@ -1,0 +1,4 @@
+# file: /app/src/backend/enrollment/signals.py
+# hypothesis_version: 6.151.12
+
+[200, 300, 'COMPLETED', 'ENROLLED', 'FAILED', 'N8NExecutionLog', 'N8NWorkflow', 'PENDING', 'WITHDRAWN', '_old_status', 'completed', 'completion_date', 'credit_points', 'enrollment.confirmed', 'enrollment_id', 'error', 'failed', 'grade', 'marks', 'offering', 'offering__unit', 'response', 'running', 'semester', 'status', 'status_code', 'student', 'student_email', 'student_id', 'student_name', 'unit_code', 'unit_name', 'users', 'year']

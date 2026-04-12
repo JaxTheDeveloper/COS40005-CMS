@@ -1,0 +1,4 @@
+# file: /app/src/backend/academic/migrations/0006_intake_and_offering_intake.py
+# hypothesis_version: 6.151.12
+
+['-year', '0005_courseunit', 'Fall', 'ID', 'Intake', 'S1', 'S2', 'S3', 'SS', 'Spring', 'Summer', 'Third', 'WS', 'Winter', 'academic', 'academic.intake', 'created_at', 'created_by', 'deleted_at', 'id', 'intake', 'is_deleted', 'offerings', 'ordering', 'semester', 'semesteroffering', 'updated_at', 'updated_by', 'year']

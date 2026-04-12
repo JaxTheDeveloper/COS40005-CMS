@@ -1,0 +1,4 @@
+# file: /app/src/backend/social/serializers.py
+# hypothesis_version: 6.151.12
+
+[200, 'amount', 'awarded_by', 'created_at', 'current_balance', 'details', 'id', 'lifetime_earned', 'reason', 'student', 'transaction_type', 'updated_at']

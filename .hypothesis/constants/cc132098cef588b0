@@ -1,0 +1,4 @@
+# file: /app/src/backend/academic/serializers.py
+# hypothesis_version: 6.151.12
+
+['_is_elective', 'capacity', 'code', 'convenor', 'credit_points', 'current_enrollment', 'department', 'description', 'enrollment_end', 'enrollment_start', 'id', 'is_active', 'is_elective', 'name', 'notes', 'semester', 'unit', 'year']

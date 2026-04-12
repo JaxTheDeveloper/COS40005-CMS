@@ -1,0 +1,4 @@
+# file: /app/src/backend/social/models.py
+# hypothesis_version: 6.151.12
+
+[100, 200, '-created_at', '-earned_at', 'AWARD', 'Award Points', 'BONUS', 'Bonus Points', 'DEDUCT', 'Deduct Points', 'EXPIRE', 'Points Expiry', 'Social Gold Balance', 'Social Gold Balances', 'achievement', 'achievement_badges/', 'achievements', 'awarded_social_gold', 'name', 'points_required', 'social_gold', 'student']

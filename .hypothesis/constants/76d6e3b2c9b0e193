@@ -1,0 +1,4 @@
+# file: /app/src/backend/users/views/profile.py
+# hypothesis_version: 6.151.12
+
+['POST', 'dashboard', 'form']

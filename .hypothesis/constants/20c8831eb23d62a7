@@ -1,0 +1,4 @@
+# file: /app/src/backend/enrollment/migrations/0001_initial.py
+# hypothesis_version: 6.151.12
+
+['-offering__year', '0001_initial', 'COMPLETED', 'Completed', 'ENROLLED', 'Enrolled', 'Enrollment', 'EnrollmentApproval', 'FAILED', 'Failed', 'ID', 'PENDING', 'Pending Approval', 'WITHDRAWN', 'Withdrawn', 'academic', 'approval', 'approved_at', 'approved_by', 'completion_date', 'created_at', 'enrollment', 'enrollments', 'grade', 'id', 'marks', 'notes', 'offering', 'offering__semester', 'offering__unit__code', 'ordering', 'status', 'student', 'unique_together', 'updated_at', 'withdrawn_date']

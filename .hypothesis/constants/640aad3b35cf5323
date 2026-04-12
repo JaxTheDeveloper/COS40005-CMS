@@ -1,0 +1,4 @@
+# file: /app/src/backend/core/n8n_client.py
+# hypothesis_version: 6.151.12
+
+['Authorization', 'Content-Type', 'N8N_API_KEY', 'X-N8N-API-KEY', 'application/json', 'configuration', 'error_count', 'event_id', 'last_run', 'payload', 'timestamp', 'trigger_url', 'webhook_url']

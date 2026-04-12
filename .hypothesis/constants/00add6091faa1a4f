@@ -1,0 +1,4 @@
+# file: /app/src/backend/social/views.py
+# hypothesis_version: 6.151.12
+
+['achievement', 'achievements']

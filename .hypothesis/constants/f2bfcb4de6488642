@@ -1,0 +1,4 @@
+# file: /app/src/backend/academic/migrations/0001_initial.py
+# hypothesis_version: 6.151.12
+
+[3.0, 100, 200, '-year', 'Course', 'External Link', 'ID', 'LINK', 'OTHER', 'OUTLINE', 'Other Resource', 'READING', 'Required Reading', 'S1', 'S2', 'SS', 'Semester 1', 'Semester 2', 'SemesterOffering', 'Summer Session', 'TEXTBOOK', 'Textbook', 'Unit', 'Unit Outline', 'UnitResource', 'WS', 'Winter Session', 'academic.unit', 'anti_requisites', 'capacity', 'code', 'convenor', 'created_at', 'created_by', 'credit_points', 'current_enrollment', 'department', 'description', 'duration_years', 'enrollment_end', 'enrollment_start', 'file', 'id', 'incompatible_with', 'is_active', 'is_required', 'name', 'notes', 'offerings', 'ordering', 'prerequisites', 'required_for', 'resource_type', 'resources', 'semester', 'title', 'unique_together', 'unit', 'unit__code', 'unit_resources/', 'updated_at', 'url', 'year']

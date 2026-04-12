@@ -470,19 +470,137 @@ class EventViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['put'], permission_classes=[IsStaff])
+    @action(detail=True, methods=['post'], permission_classes=[IsStaff])
     def refine_content(self, request, pk=None):
         """
-        Staff-only: update event generated_content, generation_status and generation_meta.
-        Useful for refining AI-generated content before publishing.
-        """
-        event = self.get_object()
-        event.generated_content = request.data.get('generated_content', event.generated_content)
-        event.generation_status = request.data.get('generation_status', event.generation_status)
-        event.generation_meta = request.data.get('generation_meta', event.generation_meta)
-        event.save()
+        Staff-only: trigger AI refinement of an event's generated content via n8n WF-4.
 
-        return Response(serializers.EventSerializer(event).data)
+        POST body:
+          refinement_prompt (str, required) — natural-language feedback for Groq
+          current_content   (dict, optional) — content to refine; defaults to event.generated_content
+
+        Returns:
+          202 — n8n workflow triggered, generation_status set to 'pending'
+          200 — mock refiner ran (no active event.refine workflow registered)
+          400 — refinement_prompt missing or blank
+          502 — trigger_workflow() raised an exception
+        """
+        from django.apps import apps
+
+        event = self.get_object()
+
+        # ── Validate prompt ───────────────────────────────────────────────────
+        refinement_prompt = request.data.get('refinement_prompt', '')
+        if isinstance(refinement_prompt, str):
+            refinement_prompt = refinement_prompt.strip()
+        if not refinement_prompt:
+            return Response(
+                {'detail': 'refinement_prompt is required'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # ── Resolve content source ────────────────────────────────────────────
+        current_content = request.data.get('current_content') or event.generated_content or {}
+
+        # ── Build audience context ────────────────────────────────────────────
+        audience_context = {
+            'visibility': event.visibility,
+            'target_all_students': event.target_all_students,
+            'target_student_count': event.get_targeted_students().count(),
+            'target_offering_ids': list(event.target_offerings.values_list('id', flat=True)),
+            'target_intake_ids': list(event.target_intakes.values_list('id', flat=True)),
+        }
+
+        # ── Look up active workflow ───────────────────────────────────────────
+        try:
+            N8NWorkflow = apps.get_model('users', 'N8NWorkflow')
+            N8NExecutionLog = apps.get_model('users', 'N8NExecutionLog')
+        except Exception:
+            N8NWorkflow = None
+            N8NExecutionLog = None
+
+        wf = None
+        if N8NWorkflow:
+            wf = N8NWorkflow.objects.filter(trigger_event='event.refine', is_active=True).first()
+
+        if wf:
+            # ── n8n path ──────────────────────────────────────────────────────
+            payload = {
+                'event_id': str(event.id),
+                'current_content': current_content,
+                'refinement_prompt': refinement_prompt,
+                'audience_context': audience_context,
+                'triggered_by': getattr(request.user, 'id', None),
+            }
+
+            log = None
+            if N8NExecutionLog:
+                triggered_by_user = request.user if getattr(request.user, 'is_authenticated', False) else None
+                log = N8NExecutionLog.objects.create(
+                    workflow=wf,
+                    triggered_by=triggered_by_user,
+                    start_time=timezone.now(),
+                    status='running',
+                    input_data=payload,
+                )
+
+            try:
+                from .n8n_client import trigger_workflow
+                status_code, resp = trigger_workflow(wf, event.id, payload)
+
+                if log:
+                    log.output_data = {'status_code': status_code, 'response': resp}
+                    log.status = 'completed' if 200 <= int(status_code) < 300 else 'failed'
+                    log.end_time = timezone.now()
+                    log.save()
+
+                event.generation_status = 'pending'
+                event.last_generated_at = timezone.now()
+                event.save(update_fields=['generation_status', 'last_generated_at'])
+
+                return Response(
+                    {'detail': 'Refinement triggered', 'generation_status': 'pending'},
+                    status=status.HTTP_202_ACCEPTED,
+                )
+
+            except Exception as exc:
+                import logging
+                logging.getLogger(__name__).exception('refine_content trigger failed for event %s', event.id)
+
+                if log:
+                    log.error_details = {'error': str(exc)}
+                    log.status = 'failed'
+                    log.end_time = timezone.now()
+                    log.save()
+
+                event.generation_status = 'failed'
+                event.save(update_fields=['generation_status'])
+
+                return Response(
+                    {'detail': 'Failed to trigger refinement workflow', 'error': str(exc)},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+
+        # ── Mock refiner path (no active workflow) ────────────────────────────
+        mock_content = {}
+        for key, value in current_content.items():
+            prefix = f'[Refinement note: {refinement_prompt}]\n'
+            mock_content[key] = prefix + (str(value) if not isinstance(value, str) else value)
+
+        meta = {
+            'generated_by': 'mock-refine',
+            'refinement_prompt': refinement_prompt,
+        }
+
+        event.generated_content = mock_content
+        event.generation_status = 'ready'
+        event.generation_meta = meta
+        event.save(update_fields=['generated_content', 'generation_status', 'generation_meta'])
+
+        return Response(
+            {'generated_content': mock_content, 'generation_meta': meta},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=['post'], permission_classes=[IsStaff], url_path='batch-create-webhook')
     def batch_create_from_webhook(self, request):

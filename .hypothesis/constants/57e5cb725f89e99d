@@ -1,0 +1,4 @@
+# file: /app/src/backend/askai/urls.py
+# hypothesis_version: 6.151.12
+
+['askai-chat', 'chat/']

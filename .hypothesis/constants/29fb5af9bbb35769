@@ -1,0 +1,4 @@
+# file: /app/src/backend/core/management/commands/register_wf4.py
+# hypothesis_version: 6.151.12
+
+['--test-url', '--webhook-url', '<not set>', 'Done.', 'N8NWorkflow', 'configuration', 'description', 'event.refine', 'is_active', 'name', 'notes', 'test_url', 'users', 'webhook_url', 'webhook_url_test']

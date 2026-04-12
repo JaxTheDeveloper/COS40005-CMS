@@ -1,0 +1,4 @@
+# file: /app/src/backend/users/signals.py
+# hypothesis_version: 6.151.12
+
+['date_joined', 'enrollment_date', 'student', 'user_type']

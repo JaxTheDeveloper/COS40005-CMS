@@ -1,0 +1,4 @@
+# file: /app/src/backend/users/views/dashboard.py
+# hypothesis_version: 6.151.12
+
+['dashboard', 'student', 'unit_convenor', 'user']

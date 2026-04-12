@@ -1,0 +1,4 @@
+# file: /app/src/backend/social/apps.py
+# hypothesis_version: 6.151.12
+
+['src.backend.social']
