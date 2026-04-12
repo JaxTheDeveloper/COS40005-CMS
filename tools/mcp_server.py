@@ -1,147 +1,284 @@
-"""Lightweight MCP server exposing CMS tools for Agentation.
+"""
+SwinCMS MCP Server — speaks the Model Context Protocol over SSE.
 
-Run with `python tools/mcp_server.py` (requires fastapi & uvicorn in requirements).
-The server will initialize Django and then listen on port 8001 by default.
+n8n connects to this via the MCP Client node:
+  Transport: SSE
+  URL: http://cos40005_mcp:8001/sse
 
-Security: set MCP_SERVICE_TOKEN environment variable and include
-Authorization: Token <value> header on all requests. If unset, no auth is enforced.
+Tools exposed:
+  get_student_profile     — profile + current enrollments
+  get_student_transcript  — full academic transcript with grades
+  get_social_gold         — Social Gold balance + recent transactions
+  get_upcoming_events     — events targeted at this student
+  get_notifications       — unread notifications
+  recommend_courses       — suggest next units based on transcript
+  award_social_gold       — award gold to a student
+  list_available_units    — units in a course
+  get_event_content       — AI-generated content for an event
 
-Endpoints:
-* GET  /get_student_profile?email=...
-* POST /award_social_gold (json: student_id, amount, reason)
-* GET  /list_available_units?course_code=...
-* GET  /get_event_content?event_id=...
+Run:
+  python tools/mcp_server.py
+  (or via Docker: cos40005_mcp container)
 
-These call into Django ORM directly (or via an internal REST call for award).
+Security: set MCP_SERVICE_TOKEN env var. n8n must pass it as a header.
 """
 import os
+import sys
 import django
-from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Header, Depends, Request
-from pydantic import BaseModel
 
-# ensure DJANGO_SETTINGS_MODULE is set correctly for this project
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "src.backend.settings")
+# Ensure /app is on the path so 'config' and 'src' packages are importable
+# regardless of which directory Python was launched from
+_app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _app_root not in sys.path:
+    sys.path.insert(0, _app_root)
 
-# initialize Django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.dev")
 django.setup()
 
+from mcp.server.fastmcp import FastMCP
 from django.contrib.auth import get_user_model
-from src.backend.enrollment.models import Enrollment
-from src.backend.academic.models import Unit
-from src.backend.core.models import Event
 
 User = get_user_model()
 
-# read configuration
-API_BASE = os.environ.get('MCP_API_BASE', 'http://localhost:8000/api')
-SERVICE_TOKEN = os.environ.get('MCP_SERVICE_TOKEN')
-
-app = FastAPI(title="SwinCMS MCP Server")
+mcp = FastMCP("SwinCMS", port=int(os.environ.get("MCP_PORT", 8001)))
 
 
-def verify_token(authorization: Optional[str] = Header(None)):
-    if SERVICE_TOKEN:
-        if not authorization or authorization.split()[-1] != SERVICE_TOKEN:
-            raise HTTPException(status_code=401, detail="Invalid service token")
-    # if SERVICE_TOKEN is unset, allow all
-    return True
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
-
-@app.get("/tools")
-def list_tools(request: Request, _: bool = Depends(verify_token)):
-    """Return minimal tool definitions so that Agentation can introspect available actions."""
-    # Agentation expects a list of {name, description, parameters}
-    return [
-        {
-            "name": "get_student_profile",
-            "description": "Lookup a student by email along with their enrollments.",
-            "parameters": {"email": "string"},
-            "method": "GET",
-            "path": "/get_student_profile"
-        },
-        {
-            "name": "award_social_gold",
-            "description": "Award social gold to a student.",
-            "parameters": {"student_id": "integer", "amount": "number", "reason": "string"},
-            "method": "POST",
-            "path": "/award_social_gold"
-        },
-        {
-            "name": "list_available_units",
-            "description": "List units available for a given course code.",
-            "parameters": {"course_code": "string"},
-            "method": "GET",
-            "path": "/list_available_units"
-        },
-        {
-            "name": "get_event_content",
-            "description": "Retrieve generated content and status for an event.",
-            "parameters": {"event_id": "integer"},
-            "method": "GET",
-            "path": "/get_event_content"
-        },
-    ]
-
-
-@app.get("/get_student_profile")
-def get_student_profile(email: str, _: bool = Depends(verify_token)):
+def _get_user(email: str):
     usr = User.objects.filter(email=email).first()
     if not usr:
-        raise HTTPException(status_code=404, detail="student not found")
-    enrollments = (
+        raise ValueError(f"User not found: {email}")
+    return usr
+
+
+# ── Tools ────────────────────────────────────────────────────────────────────
+
+@mcp.tool()
+def get_student_profile(email: str) -> dict:
+    """
+    Get a student's profile and current enrollments.
+    Returns name, email, department, user_type, and list of enrolled units.
+    """
+    from src.backend.enrollment.models import Enrollment
+    usr = _get_user(email)
+    enrollments = list(
         Enrollment.objects.filter(student=usr)
         .select_related('offering__unit')
         .values(
-            'offering__unit__code',
-            'offering__year',
-            'offering__semester',
-            'status',
+            'offering__unit__code', 'offering__unit__name',
+            'offering__year', 'offering__semester',
+            'status', 'grade', 'marks',
         )
     )
-    return {"user": {"id": usr.id, "email": usr.email, "user_type": usr.user_type},
-            "enrollments": list(enrollments)}
-
-
-class GoldPayload(BaseModel):
-    student_id: int
-    amount: float
-    reason: Optional[str] = None
-
-
-@app.post("/award_social_gold")
-def award_social_gold(payload: GoldPayload, _: bool = Depends(verify_token)):
-    # this tool simply proxies to the existing REST endpoint /users/{id}/award-gold/
-    import requests
-    token = os.environ.get('MCP_BACKEND_TOKEN')
-    headers = {}
-    if token:
-        headers['Authorization'] = f"Token {token}"
-    url = f"{API_BASE}/users/{payload.student_id}/award-gold/"
-    resp = requests.post(url, json=payload.dict(), headers=headers)
-    if resp.status_code >= 400:
-        raise HTTPException(status_code=resp.status_code, detail=resp.text)
-    return resp.json()
-
-
-@app.get("/list_available_units")
-def list_available_units(course_code: str, _: bool = Depends(verify_token)):
-    units = Unit.objects.filter(course_units__course__code=course_code).values('code', 'name')
-    return {"units": list(units)}
-
-
-@app.get("/get_event_content")
-def get_event_content(event_id: int, _: bool = Depends(verify_token)):
-    ev = Event.objects.filter(id=event_id).first()
-    if not ev:
-        raise HTTPException(status_code=404, detail="event not found")
     return {
-        "generated_content": ev.generated_content,
-        "generation_status": ev.generation_status,
+        "user": {
+            "id": usr.id,
+            "email": usr.email,
+            "name": usr.get_full_name(),
+            "user_type": usr.user_type,
+            "department": usr.department,
+        },
+        "enrollments": enrollments,
     }
 
 
+@mcp.tool()
+def get_student_transcript(email: str) -> dict:
+    """
+    Get a student's full academic transcript including grades, marks, and credit points.
+    Returns all completed and in-progress units with their results.
+    """
+    from src.backend.enrollment.models import Transcript
+    usr = _get_user(email)
+    records = list(
+        Transcript.objects.filter(student=usr)
+        .order_by('-year', 'semester')
+        .values(
+            'unit_code', 'unit_name', 'semester', 'year',
+            'grade', 'marks', 'grade_point', 'status', 'credit_points',
+        )
+    )
+    total_cp = sum(
+        (r['credit_points'] or 0) for r in records
+        if r['status'] in ('COMPLETED', 'completed')
+    )
+    return {
+        "transcript": records,
+        "total_credit_points_completed": total_cp,
+        "total_units": len(records),
+    }
+
+
+@mcp.tool()
+def get_social_gold(email: str) -> dict:
+    """
+    Get a student's Social Gold balance and recent transaction history.
+    Social Gold is earned through attendance, participation, and achievements.
+    """
+    from src.backend.social.models import SocialGold, SocialGoldTransaction
+    usr = _get_user(email)
+    sg = SocialGold.objects.filter(student=usr).first()
+    transactions = list(
+        SocialGoldTransaction.objects.filter(student=usr)
+        .order_by('-created_at')
+        .values('amount', 'transaction_type', 'reason', 'created_at')[:10]
+    )
+    return {
+        "current_balance": sg.current_balance if sg else 0,
+        "lifetime_earned": sg.lifetime_earned if sg else 0,
+        "recent_transactions": transactions,
+    }
+
+
+@mcp.tool()
+def get_upcoming_events(email: str) -> dict:
+    """
+    Get upcoming events that are targeted at this specific student.
+    Only returns events the student is eligible to see based on their targeting.
+    """
+    from django.utils import timezone
+    from django.db.models import Q
+    from src.backend.core.models import Event
+    usr = _get_user(email)
+    now = timezone.now()
+    events = list(
+        Event.objects.filter(
+            Q(target_all_students=True) | Q(target_students=usr),
+            start__gte=now,
+        )
+        .exclude(visibility='staff')
+        .order_by('start')
+        .values('id', 'title', 'start', 'location', 'description', 'generation_status')[:10]
+    )
+    # Convert datetime to string for JSON serialisation
+    for ev in events:
+        if ev.get('start'):
+            ev['start'] = ev['start'].isoformat()
+    return {"upcoming_events": events, "count": len(events)}
+
+
+@mcp.tool()
+def get_notifications(email: str) -> dict:
+    """
+    Get unread notifications for a student.
+    Returns the most recent 20 unread notifications.
+    """
+    from src.backend.core.models import Notification
+    usr = _get_user(email)
+    notifs = list(
+        Notification.objects.filter(recipient=usr, unread=True)
+        .order_by('-created_at')
+        .values('id', 'verb', 'unread', 'created_at')[:20]
+    )
+    for n in notifs:
+        if n.get('created_at'):
+            n['created_at'] = n['created_at'].isoformat()
+    return {"notifications": notifs, "unread_count": len(notifs)}
+
+
+@mcp.tool()
+def recommend_courses(email: str) -> dict:
+    """
+    Recommend next units for a student to take based on their course plan
+    and units already completed or enrolled in.
+    Returns up to 5 recommended units with descriptions.
+    """
+    from src.backend.enrollment.models import Enrollment, Transcript
+    from src.backend.academic.models import Unit
+    usr = _get_user(email)
+
+    completed_codes = set(
+        Transcript.objects.filter(student=usr, status__in=['COMPLETED', 'completed'])
+        .values_list('unit_code', flat=True)
+    )
+    enrolled_codes = set(
+        Enrollment.objects.filter(student=usr)
+        .values_list('offering__unit__code', flat=True)
+    )
+    taken = completed_codes | enrolled_codes
+
+    try:
+        from src.backend.users.models import StudentProfile
+        profile = StudentProfile.objects.filter(user=usr).select_related('course').first()
+        if profile and profile.course:
+            suggestions = list(
+                Unit.objects.filter(course_units__course=profile.course)
+                .exclude(code__in=taken)
+                .values('code', 'name', 'credit_points', 'description')[:5]
+            )
+        else:
+            suggestions = list(
+                Unit.objects.exclude(code__in=taken)
+                .values('code', 'name', 'credit_points', 'description')[:5]
+            )
+    except Exception:
+        suggestions = []
+
+    return {
+        "completed_units": list(completed_codes),
+        "currently_enrolled": list(enrolled_codes),
+        "recommended_next": suggestions,
+    }
+
+
+@mcp.tool()
+def award_social_gold(student_id: int, amount: float, reason: str = "") -> dict:
+    """
+    Award Social Gold to a student. Used for attendance, achievements, or manual awards.
+    Requires student_id (integer), amount (positive number), and optional reason string.
+    """
+    import requests
+    api_base = os.environ.get('MCP_API_BASE', 'http://localhost:8000/api')
+    token = os.environ.get('MCP_BACKEND_TOKEN', '')
+    headers = {'Authorization': f'Token {token}'} if token else {}
+    url = f"{api_base}/social/transactions/award/"
+    resp = requests.post(url, json={
+        "student_id": student_id,
+        "amount": amount,
+        "transaction_type": "AWARD",
+        "reason": reason,
+    }, headers=headers, timeout=10)
+    if resp.status_code >= 400:
+        raise ValueError(f"Award failed: {resp.text}")
+    return resp.json()
+
+
+@mcp.tool()
+def list_available_units(course_code: str) -> dict:
+    """
+    List all units available for a given course code.
+    Useful for advising students on what they can enrol in.
+    """
+    from src.backend.academic.models import Unit
+    units = list(
+        Unit.objects.filter(course_units__course__code=course_code)
+        .values('code', 'name', 'credit_points', 'description')
+    )
+    return {"course_code": course_code, "units": units, "count": len(units)}
+
+
+@mcp.tool()
+def get_event_content(event_id: int) -> dict:
+    """
+    Get the AI-generated content for a specific event.
+    Returns social post, email newsletter, recruitment ad, and Vietnamese version.
+    """
+    from src.backend.core.models import Event
+    ev = Event.objects.filter(id=event_id).first()
+    if not ev:
+        raise ValueError(f"Event not found: {event_id}")
+    return {
+        "id": ev.id,
+        "title": ev.title,
+        "generation_status": ev.generation_status,
+        "generated_content": ev.generated_content,
+        "generation_meta": ev.generation_meta,
+    }
+
+
+# ── Run ───────────────────────────────────────────────────────────────────────
+
 if __name__ == '__main__':
-    import uvicorn
-    port = int(os.environ.get('MCP_PORT', 8001))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # SSE transport — n8n MCP Client node connects to http://cos40005_mcp:8001/sse
+    mcp.run(transport="sse")

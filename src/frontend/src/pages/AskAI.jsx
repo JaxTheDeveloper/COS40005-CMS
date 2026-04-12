@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { api } from "../services/api";
 
 const SUGGESTIONS = [
-  "How do I write a strong introduction for my essay?",
-  "What's a good way to manage my time for homework?",
-  "What are the major differences between democracy and monarchy?",
-  "What's the best way to handle group projects?",
-  "How can I prepare effectively for exams?",
+  "What units should I take next semester?",
+  "How is my academic performance so far?",
+  "How can I earn more Social Gold?",
+  "What events are coming up for me?",
+  "Can you summarise my transcript?",
+  "What do I need to graduate?",
 ];
 
 export default function AskAI() {
@@ -92,7 +93,7 @@ export default function AskAI() {
           <div>
             <h2 className="askai-chat-title">Ask AI</h2>
             <span className="askai-chat-subtitle">
-              Powered by Gemini — your study assistant
+              Powered by Gemini — knows your records
             </span>
           </div>
         </div>
@@ -110,7 +111,8 @@ export default function AskAI() {
             <div className="askai-empty-icon">🎓</div>
             <h3 className="askai-empty-title">How can I help you today?</h3>
             <p className="askai-empty-subtitle">
-              Ask me anything about your studies, assignments, or student life.
+              I have access to your enrollments, grades, Social Gold, and upcoming events.
+              Ask me anything about your academic journey.
             </p>
             <div className="askai-suggestions">
               {SUGGESTIONS.map((s, idx) => (

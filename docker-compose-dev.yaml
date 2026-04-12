@@ -81,8 +81,15 @@ services:
       - "8001:8001"
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.dev
+      - PYTHONPATH=/app
+      - POSTGRES_DB=SwinCMS
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_HOST=cos40005_postgres
+      - POSTGRES_PORT=5432
       - MCP_SERVICE_TOKEN=changeme
-      - MCP_API_BASE=http://backend:8000/api
+      - MCP_API_BASE=http://cos40005_backend:8000/api
+      - MCP_PORT=8001
     networks:
       - postgres
     depends_on:

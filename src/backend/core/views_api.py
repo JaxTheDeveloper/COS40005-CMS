@@ -12,10 +12,50 @@ from .permissions import (
 
 
 class EventViewSet(viewsets.ModelViewSet):
-    queryset = models.Event.objects.all().order_by('-start')
     serializer_class = serializers.EventSerializer
-    # Events: authenticated users can list/read; convenors and staff can create/edit
     permission_classes = [IsConvenorOrStaffOrReadOnly]
+
+    def get_queryset(self):
+        """
+        Filter events based on who is asking:
+
+        - Staff / convenors / admins → see all events (management view)
+        - Authenticated students     → see only events targeted to them:
+              * visibility='public' AND target_all_students=True
+              * OR they are in target_students
+              * OR they are enrolled in an offering in target_offerings
+              * OR they are in an intake in target_intakes
+              * visibility='staff' events are never shown to students
+        - Unauthenticated            → public + target_all_students only
+        """
+        from django.db.models import Q
+        user = self.request.user
+        base = models.Event.objects.order_by('-start')
+
+        # Staff / convenors / admins see everything
+        if user and user.is_authenticated:
+            is_staff_role = (
+                user.is_staff or
+                getattr(user, 'user_type', None) in ('staff', 'unit_convenor', 'admin')
+            )
+            if is_staff_role:
+                return base
+
+            # Student — filter to events targeted at them
+            student_q = (
+                # Public broadcast to all students
+                Q(target_all_students=True, visibility__in=('public', 'unit')) |
+                # Directly targeted
+                Q(target_students=user) |
+                # Via their enrolled offerings
+                Q(target_offerings__enrollments__student=user) |
+                # Via their intake
+                Q(target_intakes__offerings__enrollments__student=user)
+            )
+            return base.filter(student_q).exclude(visibility='staff').distinct()
+
+        # Unauthenticated — public broadcast only
+        return base.filter(target_all_students=True, visibility='public')
 
     @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def targeted_students(self, request, pk=None):

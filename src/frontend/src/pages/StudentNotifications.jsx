@@ -25,15 +25,15 @@ export default function StudentNotifications() {
   const loadData = async () => {
     try {
       setLoading(true);
+      // Backend now filters events to only those targeted at the logged-in student
       const eventsResponse = await api.get('/core/events/');
-      const filteredEvents = eventsResponse.data.filter(
-        (event) => event.visibility !== 'public'
-      );
-      setEvents(filteredEvents);
+      const data = eventsResponse.data;
+      setEvents(Array.isArray(data) ? data : (data.results || []));
 
       try {
         const notifResponse = await api.get('/core/notifications/');
-        setNotifications(notifResponse.data);
+        const notifData = notifResponse.data;
+        setNotifications(Array.isArray(notifData) ? notifData : (notifData.results || []));
       } catch (e) {
         console.log('Notifications endpoint not available');
       }
