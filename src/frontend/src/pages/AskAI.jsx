@@ -57,7 +57,7 @@ export default function AskAI() {
     } catch (err) {
       const errorMsg =
         err.response?.data?.error ||
-        "Something went wrong. Please try again.";
+        (err.response?.status === 504 ? 'The AI is thinking too hard — please try again.' : 'Something went wrong. Please try again.');
       setMessages((prev) => [
         ...prev,
         { role: "error", text: errorMsg },

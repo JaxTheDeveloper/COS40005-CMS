@@ -61,7 +61,12 @@ def get_student_profile(email: str) -> dict:
     Returns name, email, department, user_type, and list of enrolled units.
     """
     from src.backend.enrollment.models import Enrollment
-    usr = _get_user(email)
+    usr = User.objects.filter(email=email).first()
+    if not usr:
+        return {
+            "found": False,
+            "message": f"No student found with email '{email}'. I have no information about this person.",
+        }
     enrollments = list(
         Enrollment.objects.filter(student=usr)
         .select_related('offering__unit')
@@ -72,6 +77,7 @@ def get_student_profile(email: str) -> dict:
         )
     )
     return {
+        "found": True,
         "user": {
             "id": usr.id,
             "email": usr.email,
@@ -90,24 +96,16 @@ def get_student_transcript(email: str) -> dict:
     Returns all completed and in-progress units with their results.
     """
     from src.backend.enrollment.models import Transcript
-    usr = _get_user(email)
+    usr = User.objects.filter(email=email).first()
+    if not usr:
+        return {"found": False, "message": f"No student found with email '{email}'."}
     records = list(
         Transcript.objects.filter(student=usr)
         .order_by('-year', 'semester')
-        .values(
-            'unit_code', 'unit_name', 'semester', 'year',
-            'grade', 'marks', 'grade_point', 'status', 'credit_points',
-        )
+        .values('unit_code', 'unit_name', 'semester', 'year', 'grade', 'marks', 'grade_point', 'status', 'credit_points')
     )
-    total_cp = sum(
-        (r['credit_points'] or 0) for r in records
-        if r['status'] in ('COMPLETED', 'completed')
-    )
-    return {
-        "transcript": records,
-        "total_credit_points_completed": total_cp,
-        "total_units": len(records),
-    }
+    total_cp = sum((r['credit_points'] or 0) for r in records if r['status'] in ('COMPLETED', 'completed'))
+    return {"found": True, "transcript": records, "total_credit_points_completed": total_cp, "total_units": len(records)}
 
 
 @mcp.tool()
@@ -117,7 +115,9 @@ def get_social_gold(email: str) -> dict:
     Social Gold is earned through attendance, participation, and achievements.
     """
     from src.backend.social.models import SocialGold, SocialGoldTransaction
-    usr = _get_user(email)
+    usr = User.objects.filter(email=email).first()
+    if not usr:
+        return {"found": False, "message": f"No student found with email '{email}'."}
     sg = SocialGold.objects.filter(student=usr).first()
     transactions = list(
         SocialGoldTransaction.objects.filter(student=usr)
@@ -125,6 +125,7 @@ def get_social_gold(email: str) -> dict:
         .values('amount', 'transaction_type', 'reason', 'created_at')[:10]
     )
     return {
+        "found": True,
         "current_balance": sg.current_balance if sg else 0,
         "lifetime_earned": sg.lifetime_earned if sg else 0,
         "recent_transactions": transactions,
@@ -140,7 +141,9 @@ def get_upcoming_events(email: str) -> dict:
     from django.utils import timezone
     from django.db.models import Q
     from src.backend.core.models import Event
-    usr = _get_user(email)
+    usr = User.objects.filter(email=email).first()
+    if not usr:
+        return {"found": False, "message": f"No student found with email '{email}'."}
     now = timezone.now()
     events = list(
         Event.objects.filter(
@@ -151,11 +154,10 @@ def get_upcoming_events(email: str) -> dict:
         .order_by('start')
         .values('id', 'title', 'start', 'location', 'description', 'generation_status')[:10]
     )
-    # Convert datetime to string for JSON serialisation
     for ev in events:
         if ev.get('start'):
             ev['start'] = ev['start'].isoformat()
-    return {"upcoming_events": events, "count": len(events)}
+    return {"found": True, "upcoming_events": events, "count": len(events)}
 
 
 @mcp.tool()
@@ -165,7 +167,9 @@ def get_notifications(email: str) -> dict:
     Returns the most recent 20 unread notifications.
     """
     from src.backend.core.models import Notification
-    usr = _get_user(email)
+    usr = User.objects.filter(email=email).first()
+    if not usr:
+        return {"found": False, "message": f"No student found with email '{email}'."}
     notifs = list(
         Notification.objects.filter(recipient=usr, unread=True)
         .order_by('-created_at')
@@ -174,7 +178,7 @@ def get_notifications(email: str) -> dict:
     for n in notifs:
         if n.get('created_at'):
             n['created_at'] = n['created_at'].isoformat()
-    return {"notifications": notifs, "unread_count": len(notifs)}
+    return {"found": True, "notifications": notifs, "unread_count": len(notifs)}
 
 
 @mcp.tool()
@@ -186,7 +190,9 @@ def recommend_courses(email: str) -> dict:
     """
     from src.backend.enrollment.models import Enrollment, Transcript
     from src.backend.academic.models import Unit
-    usr = _get_user(email)
+    usr = User.objects.filter(email=email).first()
+    if not usr:
+        return {"found": False, "message": f"No student found with email '{email}'."}
 
     completed_codes = set(
         Transcript.objects.filter(student=usr, status__in=['COMPLETED', 'completed'])
@@ -216,6 +222,7 @@ def recommend_courses(email: str) -> dict:
         suggestions = []
 
     return {
+        "found": True,
         "completed_units": list(completed_codes),
         "currently_enrolled": list(enrolled_codes),
         "recommended_next": suggestions,

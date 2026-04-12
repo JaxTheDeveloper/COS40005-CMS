@@ -168,12 +168,11 @@ def chat(request):
     if wf:
         webhook_url = _resolve_webhook_url(wf)
         if webhook_url:
+            from django.utils import timezone as _tz
             try:
                 resp = http_requests.post(
                     webhook_url,
                     json={
-                        'event_id': None,
-                        'timestamp': __import__('django.utils.timezone', fromlist=['timezone']).timezone.now().isoformat(),
                         'payload': {
                             'email': request.user.email,
                             'message': user_message,
@@ -181,12 +180,17 @@ def chat(request):
                         },
                     },
                     headers={'Content-Type': 'application/json'},
-                    timeout=60,
+                    timeout=45,
                 )
                 resp.raise_for_status()
                 data = resp.json()
                 reply = data.get('reply') or data.get('output') or str(data)
                 return Response({'reply': reply, 'source': 'n8n'})
+            except http_requests.exceptions.Timeout:
+                return Response(
+                    {'error': 'The AI advisor is taking too long to respond. Please try again in a moment.'},
+                    status=status.HTTP_504_GATEWAY_TIMEOUT,
+                )
             except Exception as exc:
                 import logging
                 logging.getLogger(__name__).warning('n8n student.ask failed, falling back to Gemini: %s', exc)
