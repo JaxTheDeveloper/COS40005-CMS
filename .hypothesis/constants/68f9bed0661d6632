@@ -1,4 +1,0 @@
-# file: /app/src/backend/academic/models.py
-# hypothesis_version: 6.151.12
-
-[3.0, 100, 200, ' [Elective]', '-year', 'CourseUnit', 'External Link', 'Fall', 'LINK', 'OTHER', 'OUTLINE', 'Other Resource', 'READING', 'Required Reading', 'S1', 'S2', 'S3', 'SS', 'Semester 1', 'Semester 2', 'Semester 3', 'Spring', 'Summer', 'Summer Session', 'TEXTBOOK', 'Textbook', 'Third', 'Unit', 'Unit Outline', 'WS', 'Winter', 'Winter Session', 'academic.Intake', 'code', 'course', 'course__code', 'course_units', 'courses', 'offerings', 'required_for', 'resource_type', 'resources', 'self', 'semester', 'title', 'unit', 'unit__code', 'unit_resources/', 'year']

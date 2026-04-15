@@ -1,4 +1,0 @@
-# file: /app/src/backend/core/serializers.py
-# hypothesis_version: 6.151.12
-
-['__all__', 'admin', 'attendees', 'created_at', 'deleted_at', 'description', 'end', 'generated_content', 'generation_meta', 'generation_status', 'id', 'is_deleted', 'last_generated_at', 'location', 'related_offering', 'related_unit', 'request', 'semester', 'staff', 'start', 'student', 'target_all_students', 'target_intakes', 'target_offerings', 'target_students', 'title', 'unit_convenor', 'updated_at', 'user', 'visibility', 'year']

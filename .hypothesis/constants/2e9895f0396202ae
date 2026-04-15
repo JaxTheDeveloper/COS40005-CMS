@@ -1,4 +1,0 @@
-# file: /app/src/backend/core/permissions.py
-# hypothesis_version: 6.151.12
-
-['created_by', 'submitter', 'unit_convenor', 'uploaded_by', 'user_type']

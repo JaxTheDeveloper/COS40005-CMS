@@ -1,4 +1,0 @@
-# file: /app/src/backend/askai/views.py
-# hypothesis_version: 6.151.12
-
-[0.7, 0.95, 200, 2048, 'GEMINI_API_KEY', 'Gemini_API_Key', 'Message is required.', 'POST', 'candidates', 'content', 'contents', 'error', 'generationConfig', 'history', 'maxOutputTokens', 'message', 'model', 'parts', 'reply', 'role', 'temperature', 'text', 'topP', 'user']

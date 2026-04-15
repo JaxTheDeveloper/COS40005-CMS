@@ -1,4 +1,0 @@
-# file: /app/manage.py
-# hypothesis_version: 6.151.12
-
-['__main__', 'config.settings.dev']

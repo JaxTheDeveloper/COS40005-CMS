@@ -1,4 +1,0 @@
-# file: /app/src/backend/academic/migrations/0002_alter_semesteroffering_semester.py
-# hypothesis_version: 6.151.12
-
-['0001_initial', 'S1', 'S2', 'S3', 'SS', 'Semester 1', 'Semester 2', 'Semester 3', 'Summer Session', 'WS', 'Winter Session', 'academic', 'semester', 'semesteroffering']

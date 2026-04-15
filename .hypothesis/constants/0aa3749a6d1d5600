@@ -1,4 +1,0 @@
-# file: /app/src/backend/social/views_api.py
-# hypothesis_version: 6.151.12
-
-['AWARD', 'BONUS', 'Student not found', 'amount', 'award', 'awarded', 'current_balance', 'details', 'error', 'lifetime_earned', 'new_balance', 'post', 'reason', 'status', 'student', 'student_id', 'transaction_id', 'transaction_type']

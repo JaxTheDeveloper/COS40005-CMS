@@ -1,4 +1,0 @@
-# file: /app/src/backend/users/forms.py
-# hypothesis_version: 6.151.12
-
-['address_line1', 'address_line2', 'bio', 'city', 'country', 'date_of_birth', 'department', 'first_name', 'last_name', 'phone_number', 'position', 'postal_code', 'profile_image', 'state']

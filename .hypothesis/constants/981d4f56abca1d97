@@ -1,4 +1,0 @@
-# file: /app/src/backend/academic/migrations/0005_courseunit.py
-# hypothesis_version: 6.151.12
-
-['CourseUnit', 'ID', 'academic', 'academic.CourseUnit', 'academic.course', 'academic.unit', 'course', 'course__code', 'course_units', 'courses', 'created_at', 'created_by', 'deleted_at', 'id', 'is_deleted', 'is_elective', 'ordering', 'unique_together', 'unit', 'unit__code', 'units', 'updated_at', 'updated_by']

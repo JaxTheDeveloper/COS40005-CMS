@@ -1,4 +1,0 @@
-# file: /app/src/backend/users/migrations/0003_alter_studentprofile_course.py
-# hypothesis_version: 6.151.12
-
-['course', 'studentprofile', 'users', 'users.course']

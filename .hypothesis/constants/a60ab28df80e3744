@@ -1,4 +1,0 @@
-# file: /app/src/backend/users/urls.py
-# hypothesis_version: 6.151.12
-
-['admin/login/', 'admin_login', 'convenor_dashboard', 'dashboard', 'dashboard/', 'dashboard/convenor/', 'dashboard/student/', 'login', 'login/', 'logout', 'logout/', 'n8n-log', 'n8n-logs', 'n8n-workflow', 'n8n-workflows', 'password-reset/', 'password-reset/done/', 'password_reset', 'password_reset_done', 'profile/edit/', 'profile_edit', 'reset/done/', 'student-list', 'student_dashboard', 'students/', 'users']

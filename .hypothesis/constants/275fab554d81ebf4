@@ -1,4 +1,0 @@
-# file: /app/src/backend/academic/views.py
-# hypothesis_version: 6.151.12
-
-['-year', 'offerings', 'pages/my_units.html', 'resources', 'semester', 'unit', 'units']

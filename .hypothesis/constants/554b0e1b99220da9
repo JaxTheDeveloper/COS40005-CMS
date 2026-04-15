@@ -1,4 +1,0 @@
-# file: /app/src/backend/core/signals.py
-# hypothesis_version: 6.151.12
-
-[200, 300, 'N8NExecutionLog', 'N8NWorkflow', 'attendance.marked', 'attendance_status', 'completed', 'error', 'event_date', 'failed', 'offering_id', 'present', 'response', 'running', 'session', 'session__offering', 'session__unit', 'session_id', 'status_code', 'student', 'student_email', 'student_id', 'student_name', 'unit_code', 'unit_name', 'users']

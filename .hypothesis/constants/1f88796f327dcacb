@@ -1,4 +1,0 @@
-# file: /app/src/backend/core/migrations/0005_gcal_event_id_and_timeout.py
-# hypothesis_version: 6.151.12
-
-[255, '0004_event_targeting', 'core', 'event', 'gcal_event_id']

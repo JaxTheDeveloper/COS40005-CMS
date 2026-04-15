@@ -1,4 +1,0 @@
-# file: /app/src/backend/social/migrations/0002_remove_socialgold_last_updated_and_more.py
-# hypothesis_version: 6.151.12
-
-['0001_initial', 'achievement', 'created_at', 'created_by', 'deleted_at', 'is_deleted', 'last_updated', 'social', 'socialgold', 'studentachievement', 'updated_at', 'updated_by']

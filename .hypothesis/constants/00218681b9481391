@@ -1,4 +1,0 @@
-# file: /app/src/backend/core/migrations/0002_event_generated_content_event_generation_meta_and_more.py
-# hypothesis_version: 6.151.12
-
-['0001_initial', 'core', 'event', 'generated_content', 'generation_meta', 'generation_status', 'idle', 'last_generated_at']

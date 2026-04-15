@@ -1,4 +1,0 @@
-# file: /app/src/backend/users/admin.py
-# hypothesis_version: 6.151.12
-
-['academic_status', 'action', 'amount', 'application_date', 'code', 'convenor', 'course', 'created_at', 'duration_years', 'email', 'execution_id', 'is_active', 'is_staff', 'name', 'resource_type', 'role', 'role__name', 'scholarship', 'scholarship__name', 'semester', 'start_time', 'status', 'student', 'student__email', 'student_id', 'trigger_event', 'unit', 'unit__code', 'user', 'user__email', 'user_type', 'username', 'valid_from', 'valid_until', 'workflow', 'workflow__name', 'workflow_id', 'year']

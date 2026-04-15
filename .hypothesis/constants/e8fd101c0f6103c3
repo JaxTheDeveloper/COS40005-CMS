@@ -1,4 +1,0 @@
-# file: /app/src/backend/enrollment/serializers.py
-# hypothesis_version: 6.151.12
-
-['completion_date', 'created_at', 'credit_points', 'enrollment', 'grade', 'grade_point', 'id', 'marks', 'offering', 'request', 'semester', 'status', 'student', 'unit_code', 'unit_name', 'updated_at', 'withdrawn_date', 'year']

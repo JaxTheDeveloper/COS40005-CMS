@@ -1,4 +1,0 @@
-# file: /app/src/backend/enrollment/views.py
-# hypothesis_version: 6.151.12
-
-['PENDING', 'approvals', 'enrollments', 'offering__unit']

@@ -1,4 +1,0 @@
-# file: /app/src/backend/users/models.py
-# hypothesis_version: 6.151.12
-
-[3.0, 100, 200, 'Academic Probation', 'Administrator', 'Approved', 'Auditor', 'Completed', 'Enrolled', 'Failed', 'Good Standing', 'Graduated', 'Parent', 'Pending', 'Rejected', 'Running', 'Staff', 'Student', 'Suspended', 'Unit Convenor', 'User', 'Users', 'Waitlisted', 'Withdrawn', '^\\+?1?\\d{9,15}$', 'admin', 'approved', 'auditor', 'completed', 'convened_units', 'email', 'enrolled', 'failed', 'good', 'graduated', 'guardians', 'parent', 'pending', 'probation', 'profile_images/', 'rejected', 'role', 'running', 'self', 'semester', 'staff', 'student', 'suspended', 'unit', 'unit_convenor', 'user', 'username', 'waitlisted', 'withdrawn', 'year']

@@ -1,4 +1,0 @@
-# file: /app/src/backend/enrollment/migrations/0002_transcript.py
-# hypothesis_version: 6.151.12
-
-[200, '-year', '0001_initial', 'COMPLETED', 'Completed', 'ENROLLED', 'Enrolled', 'FAILED', 'Failed', 'ID', 'PENDING', 'Pending Approval', 'Transcript', 'WITHDRAWN', 'Withdrawn', 'completion_date', 'created_at', 'credit_points', 'enrollment', 'grade', 'grade_point', 'id', 'indexes', 'marks', 'ordering', 'semester', 'status', 'student', 'transcript_entry', 'transcripts', 'unit_code', 'unit_name', 'updated_at', 'year']

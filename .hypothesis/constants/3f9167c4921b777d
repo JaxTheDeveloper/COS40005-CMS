@@ -1,4 +1,0 @@
-# file: /app/src/backend/users/views_api.py
-# hypothesis_version: 6.151.12
-
-['-created_at', '-start_time', 'email', 'is_active', 'name', 'status', 'student', 'trigger_event', 'true', 'username', 'workflow']

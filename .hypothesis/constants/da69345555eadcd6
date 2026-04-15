@@ -1,4 +1,0 @@
-# file: /app/src/backend/core/middleware.py
-# hypothesis_version: 6.151.12
-
-[':', 'HTTP_HOST', 'HTTP_HOST_ORIGINAL', '_', 'localhost']

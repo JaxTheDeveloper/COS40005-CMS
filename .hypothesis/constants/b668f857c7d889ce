@@ -1,4 +1,0 @@
-# file: /app/src/backend/academic/migrations/0003_alter_unit_anti_requisites.py
-# hypothesis_version: 6.151.12
-
-['academic', 'academic.unit', 'anti_requisites', 'unit']

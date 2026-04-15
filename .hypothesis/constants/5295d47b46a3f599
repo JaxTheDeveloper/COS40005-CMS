@@ -1,4 +1,0 @@
-# file: /app/src/backend/core/urls.py
-# hypothesis_version: 6.151.12
-
-['attendance', 'event', 'events', 'form', 'forms', 'formsubmission', 'media', 'notification', 'notifications', 'page', 'pages', 'resource', 'resources', 'session', 'sessions', 'submissions', 'ticket', 'ticket-comments', 'ticketcomment', 'tickets']
